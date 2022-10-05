@@ -1,6 +1,6 @@
-#Machine Learning Methods for Groundwater Level Prediction
+# Machine Learning Methods for Groundwater Level Prediction
  
-##Towards a Global CNN Encoder-Decoder Model for Groundwater Level Predictions in Germany
+## Towards a Global CNN Encoder-Decoder Model for Groundwater Level Predictions in Germany
 
 model pipeline for groundwater level prediction in Germany
 
