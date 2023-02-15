@@ -1,7 +1,7 @@
 import abc
 import hashlib
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from multiprocessing.managers import DictProxy
 from pathlib import Path
 from typing import List, Tuple, Optional, Union
@@ -11,13 +11,11 @@ import pandas as pd
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 from .constants import (
-    TEMPORAL_RASTER_FEATURES,
-    NUMERIC_STATIC_RASTER_FEATURES,
-    CATEGORICAL_STATIC_RASTER_FEATURES,
     GWL_RASTER_FEATURES,
-    GWL_SCALAR_FEATURES,
     DEFAULT_PREPROCESSOR_CACHE_FILES,
+    TARGET_COL,
 )
+import gwl_forecast_pipeline.config as config
 
 
 class Updateable:
@@ -33,28 +31,26 @@ class ModelConfig(Updateable, abc.ABC):
     lag: int = 4
     lead: int = 1
     raster_size: int = 5
-    target_variable: str = 'gwl_asl'
+    target_variable: str = TARGET_COL
     target_normalized: bool = True
     scale_per_group: bool = True
     loss: str = 'mse'
     epochs: int = 10
     batch_size: int = 512
     learning_rate: float = .0001
-    data_format: str = 'channels_last'
     batch_norm: bool = True
     dropout: float = .5
     n_dense_layers: int = 1
     n_encoder_layers: int = 1
     n_decoder_layers: int = 2
     n_nodes: int = 32
-    categorical_static_raster_features: List[str] = field(default_factory=lambda: CATEGORICAL_STATIC_RASTER_FEATURES)
-    numeric_static_raster_features: List[str] = field(default_factory=lambda: NUMERIC_STATIC_RASTER_FEATURES)
-    temporal_raster_features: List[str] = field(default_factory=lambda: TEMPORAL_RASTER_FEATURES)
     dropout_embedding: float = .2
     dropout_static_features: float = .33
     dropout_temporal_features: float = .25
     pre_decoder_dropout: float = .25
     early_stop_patience: int = 10
+    weighted_feature: str = None
+    sample_weights: dict = None
     type_: str = None
 
     @property
@@ -62,13 +58,11 @@ class ModelConfig(Updateable, abc.ABC):
         return self.loss == "mean_group_mse"
 
     @property
-    def target(self):
-        target = self.target_variable
-        if self.target_normalized:
-            target += '_norm'
-            if self.scale_per_group:
-                target += '_per_group'
-        return target
+    def data_format(self) -> str:
+        if config.GPU:
+            return 'channels_first'
+        else:
+            return 'channels_last'
 
 
 @pydantic_dataclass(config=dict(validate_assignment=True))
@@ -82,24 +76,6 @@ class ConvLSTMModelConfig(ModelConfig):
 class CNNModelConfig(ModelConfig):
     epochs: int = 200
     type_: str = 'cnn'
-
-
-@dataclass
-class RuntimeConfig:
-    project_path: str
-    data_dir: str
-    data_loader_cache_dir: str
-    max_preprocessor_chunk_size: int
-    max_in_memory_raster_size_byte: int
-    model_path: str = None
-    preprocessor_cache_dir: str = None
-    logger_file: str = None
-    prediction_result_dir: str = None
-    hyperopt_result_dir: str = None
-    score_result_dir: str = None
-    csv_logger: Optional[str] = None
-    tensorboard: Optional[str] = None
-    gpu: bool = False
 
 
 @dataclass
@@ -199,7 +175,7 @@ class DataContainer:
     def load(self):
         self.collect()
         for _field in ['numeric_static_raster', 'categorical_static_raster', 'gwl_raster',
-                      'temporal_feature_raster', 'target']:
+                       'temporal_feature_raster', 'target']:
             setattr(self, _field, np.array(getattr(self, _field)))
 
     @staticmethod
@@ -211,11 +187,11 @@ class DataContainer:
             static_index=os.path.join(path, f'{config_hash}_{files["static_index"]}'),
             numeric_static_raster=MemmapWrapper(
                 os.path.join(path,  f'{config_hash}_{files["numeric_static_raster"]}'),
-                shape=(meta.n_wells, len(NUMERIC_STATIC_RASTER_FEATURES), *raster_size_tuple),
+                shape=(meta.n_wells, 6, *raster_size_tuple),
             ),
             categorical_static_raster=MemmapWrapper(
                 os.path.join(path, f'{config_hash}_{files["categorical_static_raster"]}'),
-                shape=(meta.n_wells, len(CATEGORICAL_STATIC_RASTER_FEATURES), *raster_size_tuple),
+                shape=(meta.n_wells, 5, *raster_size_tuple),
                 dtype=np.int32
             ),
             temporal_index=os.path.join(path, f'{config_hash}_{files["temporal_index"]}'),
@@ -225,10 +201,10 @@ class DataContainer:
             ),
             temporal_feature_raster=MemmapWrapper(
                 os.path.join(path, f'{config_hash}_{files["temporal_feature_raster"]}'),
-                shape=(meta.n_samples, len(TEMPORAL_RASTER_FEATURES), *raster_size_tuple),
+                shape=(meta.n_samples, 4, *raster_size_tuple),
             ),
             target=MemmapWrapper(
                 os.path.join(path, f'{config_hash}_{files["target"]}'),
-                shape=(meta.n_samples, len(GWL_SCALAR_FEATURES)),
+                shape=(meta.n_samples, 1),
             ),
         )

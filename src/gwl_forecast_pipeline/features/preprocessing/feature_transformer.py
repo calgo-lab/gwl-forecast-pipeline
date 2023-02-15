@@ -2,7 +2,7 @@ import numpy as np
 
 from .mixins import FeatureTransformerMixin
 from ...types import ModelConfig
-from ...constants import GWL_ASL_OFFSET
+from ...constants import GWL_ASL_OFFSET, FEATURES, GROUNDWATER_LEVEL_NORM_PER_WELL
 
 EPSILON = 1.0001
 
@@ -20,26 +20,26 @@ class StaticFeatureTransformer(FeatureTransformerMixin):
         idx, cols, vals = X
 
         # decode aspect
-        aspect_sin, aspect_cos = self._decode_aspect(vals[:, cols.index('aspect')])
+        aspect_sin, aspect_cos = self._decode_aspect(vals[:, cols.index(FEATURES.ASPECT)])
         aspect_sin = aspect_sin.reshape(-1, 1, *aspect_sin.shape[-2:])
         aspect_cos = aspect_cos.reshape(-1, 1, *aspect_cos.shape[-2:])
-        vals = np.delete(vals, cols.index('aspect'), axis=1)
-        cols.remove('aspect')
-        cols += ['aspect_sin', 'aspect_cos']
+        vals = np.delete(vals, cols.index(FEATURES.ASPECT), axis=1)
         vals = np.concatenate([vals, aspect_sin, aspect_cos], axis=1)
+        cols.remove(FEATURES.ASPECT)
+        cols.extend(['aspect_sin', 'aspect_cos'])
 
         # log transformation
-        vals[:, cols.index('relief')] = np.log(
-            vals[:, cols.index('relief')] + GWL_ASL_OFFSET
+        vals[:, cols.index(FEATURES.ELEVATION)] = np.log(
+            vals[:, cols.index(FEATURES.ELEVATION)] + GWL_ASL_OFFSET
         )
 
         # decode slope
-        vals[:, cols.index('slope')] = self._decode_slope(vals[:, cols.index('slope')])
+        vals[:, cols.index(FEATURES.SLOPE)] = self._decode_slope(vals[:, cols.index(FEATURES.SLOPE)])
 
         # fill missing static data
-        vals[:, cols.index('seepage')] = self.fill_raster(vals[:, cols.index('seepage')])
-        vals[:, cols.index('gw_recharge')] = self.fill_raster(vals[:, cols.index('gw_recharge')])
-        vals[:, cols.index('relief')] = self.fill_raster(vals[:, cols.index('relief')])
+        vals[:, cols.index(FEATURES.PERCOLATION)] = self.fill_raster(vals[:, cols.index(FEATURES.PERCOLATION)])
+        vals[:, cols.index(FEATURES.GROUNDWATER_RECHARGE)] = self.fill_raster(vals[:, cols.index(FEATURES.GROUNDWATER_RECHARGE)])
+        vals[:, cols.index(FEATURES.ELEVATION)] = self.fill_raster(vals[:, cols.index(FEATURES.ELEVATION)])
         return idx, cols, vals
 
     @staticmethod
@@ -56,47 +56,54 @@ class StaticFeatureTransformer(FeatureTransformerMixin):
 
 class TemporalFeatureTransformer(FeatureTransformerMixin):
 
-    def __init__(self, conf: ModelConfig, exclude_benchmark=False):
+    def __init__(self, conf: ModelConfig):
         self.conf = conf
-        self.exclude_benchmark = exclude_benchmark
 
     def fit(self, X, y=None):
         return self
 
     def transform(self, X):
-        idx, scalar_cols, raster_cols, scalar_vals, raster_vals = X
+        idx, cols, vals = X
 
         # fill missing gwl stack data
-        raster_vals[:, raster_cols.index('gwl_asl_raster')] = self.fill_raster(
-            raster_vals[:, raster_cols.index('gwl_asl_raster')], max_iter=0)
-
-        if not self.exclude_benchmark:
-            # set gwl raster center value to target
-            raster_vals[
-                :,
-                raster_cols.index('gwl_asl_raster'),
-                self.conf.raster_size//2,
-                self.conf.raster_size//2
-            ] = scalar_vals[:, scalar_cols.index('gwl_asl')].copy()
+        vals[:, cols.index(FEATURES.GROUNDWATER_LEVEL)] = self.fill_raster(
+            vals[:, cols.index(FEATURES.GROUNDWATER_LEVEL)], max_iter=0)
 
         # log transformation
-        raster_vals[:, self._get_cols_index(raster_cols, ['precipitation', 'lai'])] = np.log(
-            raster_vals[:, self._get_cols_index(raster_cols, ['precipitation', 'lai'])] + EPSILON
-        )
-        raster_vals[:, raster_cols.index('gwl_asl_raster')] = np.log(
-            raster_vals[:, raster_cols.index('gwl_asl_raster')] + GWL_ASL_OFFSET
-        )
-        scalar_vals[:, scalar_cols.index('gwl_asl')] = np.log(
-            scalar_vals[:, scalar_cols.index('gwl_asl')] + GWL_ASL_OFFSET
-        )
+        log_features = []
+        if FEATURES.PRECIPITATION in cols:
+            log_features.append(FEATURES.PRECIPITATION)
+        if FEATURES.LEAF_AREA_INDEX in cols:
+            log_features.append(FEATURES.LEAF_AREA_INDEX)
+        if log_features:
+            vals[:, self._get_cols_index(cols, log_features)] = np.log(
+                vals[:, self._get_cols_index(cols, [FEATURES.PRECIPITATION, FEATURES.LEAF_AREA_INDEX])] + EPSILON
+            )
+        if FEATURES.GROUNDWATER_LEVEL in cols:
+            gwl_vals = vals[:, [cols.index(FEATURES.GROUNDWATER_LEVEL)]].copy()
+            vals = np.concatenate([vals, gwl_vals], axis=1)
+            cols.append(GROUNDWATER_LEVEL_NORM_PER_WELL)
+            vals[:, cols.index(FEATURES.GROUNDWATER_LEVEL)] = np.log(vals[:, cols.index(FEATURES.GROUNDWATER_LEVEL)] + GWL_ASL_OFFSET)
+        return idx, cols, vals
 
-        # clip gwl delta
-        scalar_vals[:, scalar_cols.index('gwl_delta')] = np.clip(
-            scalar_vals[:, scalar_cols.index('gwl_delta')], -1., 1.
-        )
 
-        return idx, scalar_cols, raster_cols, scalar_vals, raster_vals
+class TargetTransformer(FeatureTransformerMixin):
 
-    @staticmethod
-    def inverse_transform(values):
-        return np.exp(values) - GWL_ASL_OFFSET
+    def __init__(self, conf: ModelConfig):
+        self.conf = conf
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        idx = X.index
+        vals = X[[self.conf.target_variable]].values
+        if not self.conf.scale_per_group:
+            vals = np.log(vals + GWL_ASL_OFFSET)
+        return idx, vals
+
+    def inverse_transform(self, values):
+        if not self.conf.scale_per_group:
+            return np.exp(values) - GWL_ASL_OFFSET
+        else:
+            return values

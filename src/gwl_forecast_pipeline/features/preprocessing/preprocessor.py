@@ -8,47 +8,49 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from .pipeline import StaticPreprocessingPipeline, TemporalPreprocessingPipeline
-from ...types import (RuntimeConfig, ModelConfig, DataContainer)
+import gwl_forecast_pipeline.config as config
+from .pipeline import (
+    StaticRasterPreprocessingPipeline,
+    TemporalRasterPreprocessingPipeline,
+    TargetPreprocessingPipeline,
+)
+from ...types import (ModelConfig, DataContainer)
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class Preprocessor:
-    runtime_conf: RuntimeConfig
     model_conf: ModelConfig
-    exclude_benchmark: bool = False
 
     def __post_init__(self):
-        self.static_preprocessor = StaticPreprocessingPipeline(self.model_conf)
-        self.temporal_preprocessor = TemporalPreprocessingPipeline(self.model_conf,
-                                                                   exclude_benchmark=self.exclude_benchmark)
+        self.static_preprocessor = StaticRasterPreprocessingPipeline(self.model_conf)
+        self.temporal_preprocessor = TemporalRasterPreprocessingPipeline(self.model_conf)
+        self.target_preprocessor = TargetPreprocessingPipeline(self.model_conf)
 
     @staticmethod
-    def from_cache(runtime_conf: RuntimeConfig, model_conf: ModelConfig):
-        preprocessor = Preprocessor(runtime_conf, model_conf)
-        preprocessor.static_preprocessor.restore_scalers(runtime_conf.model_path,
-                                                         name=model_conf.name)
-        preprocessor.temporal_preprocessor.restore_scalers(runtime_conf.model_path,
-                                                           name=model_conf.name)
+    def from_cache(model_conf: ModelConfig):
+        preprocessor = Preprocessor(model_conf)
+        preprocessor.static_preprocessor.restore_scalers(config.MODEL_PATH, name=model_conf.name)
+        preprocessor.temporal_preprocessor.restore_scalers(config.MODEL_PATH, name=model_conf.name)
+        preprocessor.target_preprocessor.restore_scalers(config.MODEL_PATH, name=model_conf.name)
         return preprocessor
 
     def store(self):
-        self.static_preprocessor.dump_scalers(self.runtime_conf.model_path,
-                                              name=self.model_conf.name)
-        self.temporal_preprocessor.dump_scaler(self.runtime_conf.model_path,
-                                               name=self.model_conf.name)
+        self.static_preprocessor.dump_scalers(config.MODEL_PATH, name=self.model_conf.name)
+        self.temporal_preprocessor.dump_scaler(config.MODEL_PATH, name=self.model_conf.name)
+        self.target_preprocessor.dump_scaler(config.MODEL_PATH, name=self.model_conf.name)
 
     def fit(self, raw_data):
         meta_data, static_data_generator, temporal_data_generator = raw_data
         self.static_preprocessor.fit(next(static_data_generator))
         for temp_data in temporal_data_generator:
             self.temporal_preprocessor.fit(temp_data, partial=True)
+            self.target_preprocessor.fit(temp_data, partial=True)
 
     def preprocess(self, raw_data, fit=True, use_fs_buffer=True):
         meta_data, static_data_generator, temporal_data_generator = raw_data
-        data_container = DataContainer.from_path(self.runtime_conf.preprocessor_cache_dir,
+        data_container = DataContainer.from_path(config.PREPROCESSOR_CACHE_PATH,
                                                  meta=meta_data)
         errors = data_container.collect(dry_run=True)
 
@@ -70,7 +72,7 @@ class Preprocessor:
         return data_container
 
     def inverse_transform_gwl(self, index, values: np.ndarray):
-        return self.temporal_preprocessor.inverse_transform(index, values)
+        return self.target_preprocessor.inverse_transform(index, values)
 
     def _preprocess_static(self, static_data_generator, fit, data_container, use_fs_buffer):
         static_data = next(static_data_generator)
@@ -109,11 +111,13 @@ class Preprocessor:
             for temp_data in temporal_data_generator:
                 if fit:
                     transformed = self.temporal_preprocessor.fit_transform(temp_data, fit_partial=True)
+                    targets = self.target_preprocessor.fit_transform(temp_data, fit_partial=True)
                 else:
                     transformed = self.temporal_preprocessor.transform(temp_data)
+                    targets = self.target_preprocessor.transform(temp_data)
 
                 if not transformed[0].empty:
-                    temp_idx, gwl_stack, feature_stack, targets = transformed
+                    temp_idx, gwl_stack, feature_stack = transformed
 
                     if use_fs_buffer:
                         temp_idx.to_csv(data_container.temporal_index, index=False, header=False, mode="a")

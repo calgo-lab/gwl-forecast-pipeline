@@ -2,19 +2,18 @@ import numpy as np
 from .mixins import TransformerMixin, VStackTransformerMixin
 
 from ...types import ModelConfig
-from ...constants import (
-    CATEGORICAL_STATIC_RASTER_FEATURES,
-    GWL_SCALAR_FEATURES,
-    GWL_RASTER_FEATURES,
-    NUMERIC_STATIC_RASTER_FEATURES,
-    TEMPORAL_RASTER_FEATURES,
-)
+from ...constants import (FEATURES, GWL_RASTER_FEATURES, )
 
 
 class TemporalVStackTransformer(VStackTransformerMixin):
-    raster_columns = ['gwl_asl_raster', 'gwl_raster_one_hot', 'temperature', 'humidity',
-                      'precipitation', 'lai']
-    scalar_columns = ['gwl_asl', 'gwl_delta']
+    features_default_selection = [
+        FEATURES.HUMIDITY,
+        FEATURES.TEMPERATURE,
+        FEATURES.PRECIPITATION,
+        FEATURES.LEAF_AREA_INDEX,
+        FEATURES.GROUNDWATER_LEVEL,
+        FEATURES.GROUNDWATER_LEVEL_ONE_HOT,
+    ]
 
     def __init__(self, conf: ModelConfig):
         self.conf = conf
@@ -25,14 +24,19 @@ class TemporalVStackTransformer(VStackTransformerMixin):
 
     def transform(self, X):
         idx = X.index
-        raster_cols = X[self.raster_columns].columns.to_list()
-        scalar_cols = X[self.scalar_columns].columns.to_list()
-        raster_vals = self.df_to_np_stack(X[self.raster_columns], self.raster_size)
-        scalar_vals = X[self.scalar_columns].values
-        return idx, scalar_cols, raster_cols, scalar_vals, raster_vals
+        cols = self.features_default_selection.copy()
+        vals = self.df_to_np_stack(X[self.features_default_selection], self.raster_size)
+        return idx, cols, vals
 
 
 class TemporalHStackTransformer(TransformerMixin):
+    default_exo_features = [
+        FEATURES.HUMIDITY,
+        FEATURES.TEMPERATURE,
+        FEATURES.PRECIPITATION,
+        FEATURES.LEAF_AREA_INDEX,
+    ]
+    default_gwl_features = GWL_RASTER_FEATURES
 
     def __init__(self, conf: ModelConfig):
         self.conf = conf
@@ -42,30 +46,29 @@ class TemporalHStackTransformer(TransformerMixin):
         return self
 
     def transform(self, X):
-        idx, scalar_cols, raster_cols, scalar_vals, raster_vals = X
+        idx, cols, vals = X
         temporal_index = idx.to_frame().reset_index(drop=True)
 
-        gwl_stack = raster_vals[
-            :,
-            self._get_cols_index(raster_cols, GWL_RASTER_FEATURES)
-        ].astype(np.float32)
+        gwl_feature_stack = vals[:, self._get_cols_index(cols, self.default_gwl_features)].astype(np.float32)
 
-        feature_stack = raster_vals[
-            :,
-            self._get_cols_index(raster_cols, TEMPORAL_RASTER_FEATURES)
-        ].astype(np.float32)
+        exo_feature_stack = vals[:, self._get_cols_index(cols, self.default_exo_features)].astype(np.float32)
 
-        targets = scalar_vals[
-            :,
-            self._get_cols_index(scalar_cols, GWL_SCALAR_FEATURES)
-        ].astype(np.float32)
-
-        return temporal_index, gwl_stack, feature_stack, targets
+        return temporal_index, gwl_feature_stack, exo_feature_stack
 
 
 class StaticVStackTransformer(VStackTransformerMixin):
-    columns = ['relief', 'aspect', 'slope', 'seepage', 'gw_recharge', 'lulc',
-               'huek_lga', 'huek_lgc', 'huek_lha', 'huek_lkf']
+    features_default_selection = [
+        FEATURES.LAND_COVER,
+        FEATURES.ROCK_TYPE,
+        FEATURES.CHEMICAL_ROCK_TYPE,
+        FEATURES.CAVITY_TYPE,
+        FEATURES.PERMEABILITY,
+        FEATURES.GROUNDWATER_RECHARGE,
+        FEATURES.PERCOLATION,
+        FEATURES.ELEVATION,
+        FEATURES.SLOPE,
+        FEATURES.ASPECT,
+    ]
 
     def __init__(self, conf: ModelConfig):
         self.conf = conf
@@ -75,14 +78,29 @@ class StaticVStackTransformer(VStackTransformerMixin):
         return self
 
     def transform(self, X):
-        X = X[self.columns]
+        X = X[self.features_default_selection]
+        cols = self.features_default_selection.copy()
         idx = X.index
-        cols = X.columns.to_list()
         vals = self.df_to_np_stack(X, self.raster_size)
         return idx, cols, vals
 
 
 class StaticHStackTransformer(TransformerMixin):
+    default_categoric_features = [
+        FEATURES.LAND_COVER,
+        FEATURES.ROCK_TYPE,
+        FEATURES.CHEMICAL_ROCK_TYPE,
+        FEATURES.CAVITY_TYPE,
+        FEATURES.PERMEABILITY,
+    ]
+    default_numeric_features = [
+        FEATURES.GROUNDWATER_RECHARGE,
+        FEATURES.PERCOLATION,
+        FEATURES.ELEVATION,
+        FEATURES.SLOPE,
+        'aspect_sin',
+        'aspect_cos',
+    ]
 
     def __init__(self, conf: ModelConfig):
         self.conf = conf
@@ -95,14 +113,8 @@ class StaticHStackTransformer(TransformerMixin):
         idx, cols, vals = X
         static_index = idx.to_frame().reset_index(drop=True)
 
-        numeric_raster_features = vals[
-            :,
-            self._get_cols_index(cols, NUMERIC_STATIC_RASTER_FEATURES)
-        ].astype(np.float32)
+        numeric_features_stack = vals[:, self._get_cols_index(cols, self.default_numeric_features)].astype(np.float32)
 
-        categorical_raster_features = vals[
-            :,
-            self._get_cols_index(cols, CATEGORICAL_STATIC_RASTER_FEATURES)
-        ].astype(np.int32)
+        categoric_features_stack = vals[:, self._get_cols_index(cols, self.default_categoric_features)].astype(np.int32)
 
-        return static_index, numeric_raster_features, categorical_raster_features
+        return static_index, numeric_features_stack, categoric_features_stack

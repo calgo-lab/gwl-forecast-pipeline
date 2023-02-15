@@ -56,8 +56,9 @@ docs/_build/
 # PyBuilder
 target/
 
-# DotEnv configuration
+# Env configuration
 .env
+settings.ini
 
 # Database
 *.db
@@ -78,7 +79,6 @@ target/
 # exclude data from source control by default
 /data/
 
-models/
 
 # Mac OS-specific storage files
 .DS_Store
@@ -89,5 +89,3 @@ models/
 
 # Mypy cache
 .mypy_cache/
-
-log/

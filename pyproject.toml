@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gwl_forecast_pipeline"
+version = "0.0.1"
+authors = [
+  { name="Alexander Schulz", email="info@alexander-schulz.eu" },
+]
+description = "Package for Groundwater Level Forecasts in Germany with Machine Learning methods"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+    "Environment :: GPU :: NVIDIA CUDA",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering :: Hydrology",
+]
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[project.scripts]
+gwl_download_data = "gwl_forecast_pipeline.scripts.download_data:main"
+gwl_prepare_data = "gwl_forecast_pipeline.scripts.prepare_data:main"
+
+[project.urls]
+"Homepage" = "https://github.com/calgo-lab/gwl-forecast-pipeline"
+"Bug Tracker" = "https://github.com/calgo-lab/gwl-forecast-pipeline/issues"

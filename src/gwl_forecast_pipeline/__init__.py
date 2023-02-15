@@ -3,7 +3,6 @@ from .features import Preprocessor
 from .types import (
     CNNModelConfig,
     ConvLSTMModelConfig,
-    RuntimeConfig,
 )
 from .models import build_model, fit_new_model, fit_model, predict
 from .logging import setup_logging

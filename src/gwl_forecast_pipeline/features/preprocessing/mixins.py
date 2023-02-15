@@ -98,6 +98,17 @@ class NormalizerMixin(TransformerMixin):
     def _flatten(array):
         return np.transpose(array, (0, 2, 3, 1)).reshape(-1, array.shape[1])
 
+    @staticmethod
+    def _get_group_indices(idx):
+        proj_ids = idx.get_level_values('proj_id').to_series()
+        bool_group_indices = (proj_ids != proj_ids.shift())
+        group_ids = proj_ids[bool_group_indices].values
+        group_indices = np.arange(len(idx))[bool_group_indices]
+        group_indices_slices = [slice(group_indices[i],
+            group_indices[i + 1] if i < len(group_indices) - 1 else None) for i in
+            range(len(group_indices))]
+        return group_ids, group_indices_slices
+
 
 class VStackTransformerMixin(TransformerMixin):
 

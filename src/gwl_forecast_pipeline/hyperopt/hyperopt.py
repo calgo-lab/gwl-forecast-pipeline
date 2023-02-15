@@ -9,7 +9,7 @@ os.environ['HYPEROPT_FMIN_SEED'] = '39657454'
 from hyperopt import hp, tpe, Trials, fmin, STATUS_OK, JOB_STATE_DONE
 
 from ..models import fit_new_model
-from ..types import (RuntimeConfig, ModelConfig, DataContainer, )
+from ..types import (ModelConfig, DataContainer, )
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +36,10 @@ class HyperoptLogger:
 
 
 def hyperopt(training_data: DataContainer, validation_data: DataContainer,
-             model_config: ModelConfig, runtime_config: RuntimeConfig, max_evals=300):
+             model_config: ModelConfig, max_evals=300):
+    # Todo: use KerasTuner instead
     hp_space = _hp_space(model_config.type_)
-    csv_file = os.path.join(os.path.join(runtime_config.hyperopt_result_dir,
+    csv_file = os.path.join(os.path.join(os.environ.get('HYPEROPT_RESULT_PATH'),
                                          f'{model_config.name}.csv'))
     if os.path.exists(csv_file):
         df = pd.read_csv(csv_file)
@@ -54,7 +55,6 @@ def hyperopt(training_data: DataContainer, validation_data: DataContainer,
                            training_data=training_data,
                            validation_data=validation_data,
                            model_conf=model_config,
-                           runtime_conf=runtime_config,
                            hyperopt_logger=hyperopt_logger)
     best = fmin(fn=objective_fn, space=hp_space, algo=tpe.suggest,
                 trials=trials, max_evals=max_evals)
@@ -88,7 +88,7 @@ def _l(x):
 
 def _hp_space(model_type):
     hp_space = {
-        'lag': hp.quniform('lag', 2, 5, 1),
+        'lag': hp.quniform('lag', 2, 5, 1),  # Todo: try longer lags
         'learning_rate': hp.qloguniform('learning_rate', _l(.0001), _l(.005), .0001),
         'n_nodes': hp.qloguniform('n_nodes', _l(32), _l(128), 8),
         'n_encoder_layers': hp.quniform('n_encoder_layers', 1, 3, 1),
@@ -110,12 +110,10 @@ def _hp_space(model_type):
 
 
 def _objective_fn(hyper_params, training_data: DataContainer=None, validation_data: DataContainer=None,
-                  model_conf: ModelConfig = None, runtime_conf: RuntimeConfig = None,
-                  hyperopt_logger: HyperoptLogger = None):
+                  model_conf: ModelConfig = None, hyperopt_logger: HyperoptLogger = None):
     model_conf.update(hyper_params)
     try:
-        result = fit_new_model(training_data, model_conf, runtime_conf,
-                               val_data=validation_data)
+        result = fit_new_model(training_data, model_conf, val_data=validation_data)
         loss = result['history']['val_loss'][-1]
     except:
         loss = np.nan
