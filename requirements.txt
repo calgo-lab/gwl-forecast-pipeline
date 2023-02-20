@@ -10,11 +10,11 @@ pyarrow
 pydantic
 pyproj
 python-decouple
-pyyaml
+PyYAML
 rasterio
+requests
 rioxarray
 scikit-learn
-scipy
 StrEnum
 tensorflow
 tqdm
