@@ -208,7 +208,7 @@ def main():
     get_gwl_data(raw_data_path)
     get_gwl_drop_periods(raw_data_path)
     get_well_meta(raw_data_path)
-    # get_benchmark_data(external_data_path)
+    get_benchmark_data(external_data_path)
     get_swr1000(raw_data_path)
     get_huek250(raw_data_path)
     get_gwn1000(raw_data_path)

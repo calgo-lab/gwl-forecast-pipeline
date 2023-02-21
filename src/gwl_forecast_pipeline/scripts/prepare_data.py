@@ -24,11 +24,11 @@ logger = logging.getLogger(__name__)
 
 
 def prepare_gwn1000_data(raw_raster_path, target_base_path):
-    path = os.path.join(target_base_path, PROCESSED_DATA_PATHS[FEATURES.PERCOLATION])
+    path = os.path.join(target_base_path, PROCESSED_DATA_PATHS[FEATURES.GROUNDWATER_RECHARGE])
     if not os.path.exists(path):
         os.mkdir(path)
     logger.info('Prepare groundwater recharge data...')
-    file = os.path.join(path, f'{FEATURES.PERCOLATION}.tif')
+    file = os.path.join(path, f'{FEATURES.GROUNDWATER_RECHARGE}.tif')
     shutil.copyfile(raw_raster_path, file)
     logger.info("...done.")
     return file
@@ -151,9 +151,8 @@ def prepare_gwl_data(raw_base_path, target_base_path, raster_reference_path):
     for _ in range(int(np.ceil(interpolated_data.shape[0] / 10))):
         end = start + 10
         interpolated_data[start:end] = FeatureTransformerMixin.fill_raster(interpolated_data[start:end],
-                                                                           max_iter=6, shift_fill=False)
+                                                                           max_iter=7, shift_fill=False)
         start = end
-    interpolated_data[~np.isnan(data)] = data[~np.isnan(data)]
 
     with rasterio.open(os.path.join(path, f'{FEATURES.GROUNDWATER_LEVEL}.tif'), 'w',
                        **meta) as dst:
@@ -187,9 +186,8 @@ def prepare_gwl_data(raw_base_path, target_base_path, raster_reference_path):
     for _ in range(int(np.ceil(interpolated_data_bench.shape[0] / 10))):
         end = start + 10
         interpolated_data_bench[start:end] = FeatureTransformerMixin.fill_raster(
-            interpolated_data_bench[start:end], max_iter=6, shift_fill=False)
+            interpolated_data_bench[start:end], max_iter=7, shift_fill=False)
         start = end
-    interpolated_data_bench[~np.isnan(data_bench)] = data_bench[~np.isnan(data_bench)]
 
     with rasterio.open(os.path.join(path, f'{FEATURES.GROUNDWATER_LEVEL}{BENCHMARK_SUFFIX}.tif'), 'w',
                        **meta) as dst:

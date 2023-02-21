@@ -39,7 +39,7 @@ To install the package a python version of `3.8` (or higher) is required.
 
 While many parts of the pipeline are OS-agnostic, the _Data Preparation Stage_ relies on subprocesses
 that are specific to Linux.
-The Rasterization of geo-spatial data is done with the help of the [`gdal`-library](https://gdal.org/). 
+The Rasterization of geospatial data is done with the help of the [`gdal`-library](https://gdal.org/). 
 In order to run the _Data Preparation Stage_ the libraries `gdal-bin` and `libgdal-dev` are
 required to be installed on your system.
 
@@ -52,8 +52,7 @@ Using a [docker container](https://hub.docker.com/r/nvidia/cuda/) may be a viabl
 
 Most of the stages are optimized for low RAM usage via stream processing and file system caches, 
 such as Data Loading, Data Preprocessing and Model Training. RAM-usage is configurable via
-several parameters (documented below). Unfortunately the Data Preparation stage is very RAM consuming. 
-For flawless execution we recommend at least 256 GB of RAM. 
+several parameters (documented below). For flawless execution we recommend at minimum 64 GB of RAM. 
 
 ### Disk Space
 
@@ -89,6 +88,7 @@ EUDEM_SLOPE_URL=...
 EUDEM_ASPECT_URL=...
 GWL_URL=...
 DROP_GWL_PERIODS_URL=...
+BENCHMARK_RESULTS_URL=...
 WELL_META_URL=...
 DATA_PATH=...
 MODEL_PATH=...
@@ -98,33 +98,34 @@ HYPEROPT_RESULT_PATH=...
 SCORE_RESULT_PATH=...
 ```
 
-| VARIABLE                  | SEMANTICS                                                                                    | Required | Default         |
-|---------------------------|----------------------------------------------------------------------------------------------|----------|-----------------|
-| `EUDEM_ELEVATION_URL`     | URL for EU-DEM elevation raw data (see section on data download below)                       | yes      |                 |
-| `EUDEM_SLOPE_URL`         | URL for EU-DEM slope raw data (see section on data download below)                           | yes      |                 |
-| `EUDEM_ASPECT_URL`        | URL for EU-DEM aspect raw data (see section on data download below)                          | yes      |                 |
-| `GWL_URL`                 | URL for groundwater level raw time series data, provided by BGR                              | yes      |                 |
-| `DROP_GWL_PERIODS_URL`    | URL for data on detected implausible periods of groundwater level time series' to be removed | yes      |                 |
-| `WELL_META_URL`           | URL for static features and meta data on groundwater wells, provided by BGR                  | yes      |                 |
-| `HYRAS_HURS_URL`          | URL for HYRAS humidity raw data                                                              | no       | see `config.py` |
-| `HYRAS_TAS_URL`           | URL for HYRAS mean air temperature raw data                                                  | no       | see `config.py` |
-| `HYRAS_PR_URL`            | URL for HYRAS precipitation raw data                                                         | no       | see `config.py` |
-| `SWR_1000_URL`            | URL for Mean Annual Rate of Percolation data                                                 | no       | see `config.py` |
-| `GWN_1000_URL`            | URL for Mean Annual Groundwater Recharge Rate data                                           | no       | see `config.py` |
-| `HUEK_250_URL`            | URL for hydrogeologic overview map data                                                      | no       | see `config.py` |
-| `LAI_URL`                 | URL for Copernicus Leaf Area Index raw data                                                  | no       | see `config.py` |
-| `CLC_URL`                 | URL for Copernicus Land Cover raw data                                                       | no       | see `config.py` |
-| `DATA_PATH`               | path for data storage                                                                        | yes      |                 |
-| `MODEL_PATH`              | path for model storage                                                                       | yes      |                 |
-| `PREPROCESSOR_CACHE_PATH` | path to store preprocessed data                                                              | yes      |                 |
-| `PREDICTION_RESULT_PATH`  | path to store predictions                                                                    | yes      |                 |
-| `HYPEROPT_RESULT_PATH`    | path to store results of hyperparameter optimization                                         | yes      |                 |
-| `SCORE_RESULT_PATH`       | path to store scores                                                                         | yes      |                 |
-| `CSV_LOGGER_PATH`         | path for csv logging of model training                                                       | no       | '' (None)       |
-| `TENSORBOARD_PATH`        | path for tensorboard logs of model training                                                  | no       | '' (None)       |
-| `GPU`                     | whether to use a GPU for model training (0 or 1)                                             | no       | 0 (False)       |
-| `DATA_IN_MEMORY`          | whether to keep complete set of preprocessed data in RAM for faster model training (0 or 1)  | no       | 0 (False)       |
-| `LOGGING_CONF`            | path to logging configuration file                                                           | no       | '' (None)       |
+| VARIABLE                  | SEMANTICS                                                                                           | Required | Default         |
+|---------------------------|-----------------------------------------------------------------------------------------------------|----------|-----------------|
+| `EUDEM_ELEVATION_URL`     | URL for EU-DEM elevation raw data (see section on data download below)                              | yes      |                 |
+| `EUDEM_SLOPE_URL`         | URL for EU-DEM slope raw data (see section on data download below)                                  | yes      |                 |
+| `EUDEM_ASPECT_URL`        | URL for EU-DEM aspect raw data (see section on data download below)                                 | yes      |                 |
+| `GWL_URL`                 | URL for groundwater level raw time series data, provided by BGR                                     | yes      |                 |
+| `DROP_GWL_PERIODS_URL`    | URL for data on detected implausible periods of groundwater level time series' to be removed        | yes      |                 |
+| `WELL_META_URL`           | URL for static features and meta data on groundwater wells, provided by BGR                         | yes      |                 |
+| `BENCHMARK_RESULTS_URL`   | URL for benchmark wells and scores by [Wunsch et al.](https://doi.org/10.1038/s41467-022-28770-2)   | yes      |                 |
+| `HYRAS_HURS_URL`          | URL for HYRAS humidity raw data                                                                     | no       | see `config.py` |
+| `HYRAS_TAS_URL`           | URL for HYRAS mean air temperature raw data                                                         | no       | see `config.py` |
+| `HYRAS_PR_URL`            | URL for HYRAS precipitation raw data                                                                | no       | see `config.py` |
+| `SWR_1000_URL`            | URL for Mean Annual Rate of Percolation data                                                        | no       | see `config.py` |
+| `GWN_1000_URL`            | URL for Mean Annual Groundwater Recharge Rate data                                                  | no       | see `config.py` |
+| `HUEK_250_URL`            | URL for hydrogeologic overview map data                                                             | no       | see `config.py` |
+| `LAI_URL`                 | URL for Copernicus Leaf Area Index raw data                                                         | no       | see `config.py` |
+| `CLC_URL`                 | URL for Copernicus Land Cover raw data                                                              | no       | see `config.py` |
+| `DATA_PATH`               | path for data storage                                                                               | yes      |                 |
+| `MODEL_PATH`              | path for model storage                                                                              | yes      |                 |
+| `PREPROCESSOR_CACHE_PATH` | path to store preprocessed data                                                                     | yes      |                 |
+| `PREDICTION_RESULT_PATH`  | path to store predictions                                                                           | yes      |                 |
+| `HYPEROPT_RESULT_PATH`    | path to store results of hyperparameter optimization                                                | yes      |                 |
+| `SCORE_RESULT_PATH`       | path to store scores                                                                                | yes      |                 |
+| `CSV_LOGGER_PATH`         | path for csv logging of model training                                                              | no       | '' (None)       |
+| `TENSORBOARD_PATH`        | path for tensorboard logs of model training                                                         | no       | '' (None)       |
+| `GPU`                     | whether to use a GPU for model training (0 or 1)                                                    | no       | 0 (False)       |
+| `DATA_IN_MEMORY`          | whether to keep complete set of preprocessed data in RAM for faster model training (0 or 1)         | no       | 0 (False)       |
+| `LOGGING_CONF`            | path to logging configuration file                                                                  | no       | '' (None)       |
 
 2. Set an environment variable pointing to the directory holding the `settings.ini`-file.
 ```shell
@@ -203,9 +204,6 @@ The resulting data is stored in `DATA_PATH`.
 ```shell
 gwl_prepare_data
 ```
-> **Warning**
-> The rasterization and reprojection of the data is done with the help of the [`rioxarray`](https://corteva.github.io/rioxarray/html/rioxarray.html)-package, which seems to cause heavy RAM-loads. In our experiments up to 200GB of RAM were consumed. 
-
 
 ## Usage
 
