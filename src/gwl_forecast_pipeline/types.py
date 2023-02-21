@@ -15,7 +15,7 @@ from .constants import (
     DEFAULT_PREPROCESSOR_CACHE_FILES,
     TARGET_COL,
 )
-import gwl_forecast_pipeline.config as config
+from . import config as config
 
 
 class Updateable:
@@ -154,7 +154,7 @@ class DataContainer:
                             f.close()
                         else:
                             self.temporal_index = pd.read_csv(self.temporal_index,
-                                                              parse_dates=['datum'])
+                                                              parse_dates=['time'])
                     except FileNotFoundError:
                         error_fields.append(_field)
             else:

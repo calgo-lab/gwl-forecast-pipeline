@@ -9,7 +9,7 @@ from sklearn.preprocessing import OrdinalEncoder
 from ..constants import *
 from ..types import ModelConfig, DataContainer
 from ..features.preprocessing.stack_transformer import StaticHStackTransformer
-import gwl_forecast_pipeline.config as config
+from .. import config as config
 
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def get_lag_lead_indices(df, lag, lead):
     for _lag in range(1, lag):
         lag_idx = (_df['temp_idx'] - _lag).values.astype(float)
         lag_idx[((_df['proj_id'] != _df['proj_id'].shift(_lag)) | (
-                    (_df['datum'] - _lag * FREQ) != _df['datum'].shift(
+                    (_df['time'] - _lag * FREQ) != _df['time'].shift(
                 _lag))).values] = np.nan
         _lag_indices_list.append(lag_idx.reshape(-1, 1))
     _lag_indices = np.concatenate(_lag_indices_list[::-1], axis=1)
@@ -36,7 +36,7 @@ def get_lag_lead_indices(df, lag, lead):
     for _lead in range(1, lead+1):
         lead_idx = (_df['temp_idx'] + _lead).values.astype(float)
         lead_idx[((_df['proj_id'] != _df['proj_id'].shift(-_lead)) | (
-                (_df['datum'] + _lead * FREQ) != _df['datum'].shift(
+                (_df['time'] + _lead * FREQ) != _df['time'].shift(
             -_lead))).values] = np.nan
         _lead_indices_list.append(lead_idx.reshape(-1, 1))
     _lead_indices = np.concatenate(_lead_indices_list, axis=1)
@@ -125,11 +125,11 @@ def create_batch_generator(data_container: DataContainer, conf: ModelConfig,
                 self.x_temp_idx.loc[indices, 'static_index']
             ]
             batch_x_cat_static = self._x_static_categorical[
-                    self.x_temp_idx.loc[indices, 'static_index']
+                self.x_temp_idx.loc[indices, 'static_index']
             ]
             batch_x_cat_static = np.split(batch_x_cat_static, batch_x_cat_static.shape[1], axis=1)
 
-            batch_x = [batch_x_cat_static] + [batch_x_num_static, batch_features_lag, batch_gwl_lag, batch_features_lead]
+            batch_x = batch_x_cat_static + [batch_x_num_static, batch_features_lag, batch_gwl_lag, batch_features_lead]
             if self.conf.group_loss:
                 batch_x.append(
                     self.x_temp_idx.loc[indices, 'well_id'].values.reshape(-1, 1)

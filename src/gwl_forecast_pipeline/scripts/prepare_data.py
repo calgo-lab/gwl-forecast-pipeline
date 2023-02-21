@@ -10,26 +10,25 @@ import pandas as pd
 import rasterio
 import rioxarray
 import xarray as xr
-from dotenv import find_dotenv, load_dotenv
 from geocube.api.core import make_geocube
 from pyproj import Transformer, CRS
 from rasterio.crs import CRS
 from rasterio.merge import merge
 from rasterio.warp import Resampling
 
-from gwl_forecast_pipeline.constants import *
-from gwl_forecast_pipeline.features.preprocessing.mixins import FeatureTransformerMixin
-import gwl_forecast_pipeline.config as config
+from ..constants import *
+from ..features.preprocessing.mixins import FeatureTransformerMixin
+from .. import config as config
 
 logger = logging.getLogger(__name__)
 
 
 def prepare_gwn1000_data(raw_raster_path, target_base_path):
-    path = os.path.join(target_base_path, PROCESSED_DATA_PATHS[FEATURES.PERCOLATION])
+    path = os.path.join(target_base_path, PROCESSED_DATA_PATHS[FEATURES.GROUNDWATER_RECHARGE])
     if not os.path.exists(path):
         os.mkdir(path)
     logger.info('Prepare groundwater recharge data...')
-    file = os.path.join(path, f'{FEATURES.PERCOLATION}.tif')
+    file = os.path.join(path, f'{FEATURES.GROUNDWATER_RECHARGE}.tif')
     shutil.copyfile(raw_raster_path, file)
     logger.info("...done.")
     return file
@@ -39,11 +38,11 @@ def prepare_eudem_data(raw_raster_base_path, target_base_path, raster_reference_
     path = os.path.join(target_base_path, PROCESSED_DATA_PATHS[FEATURES.ELEVATION])
     if not os.path.exists(path):
         os.mkdir(path)
-    for name, slug, files in [
-        (FEATURES.ELEVATION, ['eu_dem_v11_E40N20.TIF', 'eu_dem_v11_E40N30.TIF']),
+    for name, files in [
+        (FEATURES.ELEVATION, ['EUD_CP-DEMS_4500025000-AA.tif', 'EUD_CP-DEMS_4500035000-AA.tif']),
         (FEATURES.ASPECT, ['EUD_CP-ASPC_4500025000-AA.tif', 'EUD_CP-ASPC_4500035000-AA.tif']),
         (FEATURES.SLOPE, ['EUD_CP-SLOP_4500025000-AA/EUD_CP-SLOP_4500025000-AA.tif',
-                                'EUD_CP-SLOP_4500035000-AA/EUD_CP-SLOP_4500035000-AA.tif']),
+                          'EUD_CP-SLOP_4500035000-AA/EUD_CP-SLOP_4500035000-AA.tif']),
     ]:
         slug = f'{DATA_SETS.EUDEM}_{name.lower()}'
         logger.info(f"Prepare relief data ({name})...")
@@ -147,9 +146,13 @@ def prepare_gwl_data(raw_base_path, target_base_path, raster_reference_path):
 
     # spatial interpolation
     interpolated_data = data.copy()
-    interpolated_data = FeatureTransformerMixin.fill_raster(interpolated_data,
-                                                            max_iter=6)
-    interpolated_data[~np.isnan(data)] = data[~np.isnan(data)]
+    # interpolate in chunks to reduce RAM usage
+    start = 0
+    for _ in range(int(np.ceil(interpolated_data.shape[0] / 10))):
+        end = start + 10
+        interpolated_data[start:end] = FeatureTransformerMixin.fill_raster(interpolated_data[start:end],
+                                                                           max_iter=7, shift_fill=False)
+        start = end
 
     with rasterio.open(os.path.join(path, f'{FEATURES.GROUNDWATER_LEVEL}.tif'), 'w',
                        **meta) as dst:
@@ -178,9 +181,13 @@ def prepare_gwl_data(raw_base_path, target_base_path, raster_reference_path):
             dst.write_band(idx, layer)
 
     interpolated_data_bench = data_bench.copy()
-    interpolated_data_bench = FeatureTransformerMixin.fill_raster(interpolated_data_bench,
-                                                                  max_iter=6)
-    interpolated_data_bench[~np.isnan(data_bench)] = data_bench[~np.isnan(data_bench)]
+    # interpolate in chunks to reduce RAM usage
+    start = 0
+    for _ in range(int(np.ceil(interpolated_data_bench.shape[0] / 10))):
+        end = start + 10
+        interpolated_data_bench[start:end] = FeatureTransformerMixin.fill_raster(
+            interpolated_data_bench[start:end], max_iter=7, shift_fill=False)
+        start = end
 
     with rasterio.open(os.path.join(path, f'{FEATURES.GROUNDWATER_LEVEL}{BENCHMARK_SUFFIX}.tif'), 'w',
                        **meta) as dst:
@@ -273,7 +280,7 @@ def prepare_lai_data(raw_raster_path, target_base_path, raster_reference_path):
 
 
 def prepare_huek_data(raw_raster_path, target_base_path, raster_reference_path):
-    path = os.path.join(target_base_path, PROCESSED_DATA_PATHS[FEATURES.OCK_TYPE])
+    path = os.path.join(target_base_path, PROCESSED_DATA_PATHS[FEATURES.ROCK_TYPE])
     if not os.path.exists(path):
         os.mkdir(path)
     logger.info('Prepare hydrogeologic static data...')

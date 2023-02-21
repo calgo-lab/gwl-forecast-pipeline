@@ -89,3 +89,5 @@ settings.ini
 
 # Mypy cache
 .mypy_cache/
+
+kubernetes/

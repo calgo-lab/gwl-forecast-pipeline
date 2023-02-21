@@ -171,12 +171,12 @@ class TargetNormalizer(NormalizerMixin):
                     vals = values[locations].copy()
                     if not isinstance(vals, np.ndarray):
                         vals = np.array([vals])
-                    df = pd.DataFrame({TARGET_COL: vals})
+                    df = pd.DataFrame({TARGET_COL: vals.flatten()})
                     inverse = self.group_scaler[proj_id].inverse_transform(df)
                     values[locations] = inverse
                 return values
             else:
-                df = pd.DataFrame({self.conf.target_variable: values})
+                df = pd.DataFrame({TARGET_COL: values.flatten()})
                 inverse = self.glob_scaler.inverse_transform(df)
                 return inverse
         else:

@@ -2,7 +2,6 @@ import logging
 import os
 import time
 import warnings
-from typing import Union
 
 import binpacking
 import numpy as np
@@ -13,7 +12,7 @@ from rasterio.io import MemoryFile
 
 from ..constants import *
 from ..types import MetaData
-import gwl_forecast_pipeline.config as config
+from .. import config as config
 
 
 logger = logging.getLogger(__name__)
@@ -131,7 +130,7 @@ class DataLoader:
         t0 = time.time()
         logger.debug("start loading static data")
         static_data = []
-        for well_id in well_ids:
+        for well_id in np.unique(well_ids):
             try:
                 well_meta = self.static_df.loc[well_id]
             except KeyError:
