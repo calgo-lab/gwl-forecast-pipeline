@@ -146,10 +146,11 @@ def prepare_gwl_data(raw_base_path, target_base_path, raster_reference_path):
 
     # spatial interpolation
     interpolated_data = data.copy()
+    # interpolate in chunks to reduce RAM usage
     start = 0
     for _ in range(int(np.ceil(interpolated_data.shape[0] / 10))):
         end = start + 10
-        interpolated_data[start:end] = FeatureTransformerMixin.fill_raster(interpolated_data,
+        interpolated_data[start:end] = FeatureTransformerMixin.fill_raster(interpolated_data[start:end],
                                                                            max_iter=6, shift_fill=False)
         start = end
     interpolated_data[~np.isnan(data)] = data[~np.isnan(data)]
@@ -181,11 +182,12 @@ def prepare_gwl_data(raw_base_path, target_base_path, raster_reference_path):
             dst.write_band(idx, layer)
 
     interpolated_data_bench = data_bench.copy()
+    # interpolate in chunks to reduce RAM usage
     start = 0
     for _ in range(int(np.ceil(interpolated_data_bench.shape[0] / 10))):
         end = start + 10
         interpolated_data_bench[start:end] = FeatureTransformerMixin.fill_raster(
-            interpolated_data_bench, max_iter=6, shift_fill=False)
+            interpolated_data_bench[start:end], max_iter=6, shift_fill=False)
         start = end
     interpolated_data_bench[~np.isnan(data_bench)] = data_bench[~np.isnan(data_bench)]
 
