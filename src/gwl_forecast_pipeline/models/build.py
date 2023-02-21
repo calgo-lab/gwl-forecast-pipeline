@@ -93,7 +93,7 @@ def _build_static_embeddings(conf: ModelConfig):
     inputs = []
     outputs = []
     for feature in CATEGORICAL_STATIC_RASTER_FEATURES:
-        input_ = layers.Input(shape=raster_size_tuple, name=f"{feature}_in")
+        input_ = layers.Input(shape=(1, *raster_size_tuple), name=f"{feature}_in")
         inputs.append(input_)
         flat = layers.Flatten(name=f"flatten_{feature}")(input_)
         cardinality = CATEGORICAL_STATIC_RASTER_FEATURES_CARDINALITIES[feature]
