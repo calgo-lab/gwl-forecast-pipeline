@@ -218,7 +218,7 @@ therefore to control the RAM consumption of the data loading process.
 import pandas as pd
 from gwl_forecast_pipeline import DataLoader
 
-WELL_IDS = ['BB_25470023', 'BB_25470023']
+WELL_IDS = ['BB_25470023', 'BB_25470024']
 START = pd.Timestamp(2000, 1, 1) 
 END = pd.Timestamp(2014, 1, 1)
 RASTER_SIZE = 5  # km

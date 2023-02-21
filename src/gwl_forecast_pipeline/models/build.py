@@ -34,7 +34,7 @@ def build_model(conf: ModelConfig):
     # inputs
     lag_features: Model = _build_lag_tensor(conf)
     lead_input = layers.Input(
-        shape=(conf.lead, len(conf.temporal_raster_features), *raster_size_tuple),
+        shape=(conf.lead, 4, *raster_size_tuple),
         name="lead_input"
     )
     inputs = lag_features.inputs + [lead_input]
@@ -92,9 +92,7 @@ def _build_static_embeddings(conf: ModelConfig):
     raster_size_tuple = (conf.raster_size, conf.raster_size)
     inputs = []
     outputs = []
-    for feature in sorted(conf.categorical_static_raster_features):
-        if feature not in CATEGORICAL_STATIC_RASTER_FEATURES:
-            raise ValueError(f"unknown feature: {feature}")
+    for feature in CATEGORICAL_STATIC_RASTER_FEATURES:
         input_ = layers.Input(shape=raster_size_tuple, name=f"{feature}_in")
         inputs.append(input_)
         flat = layers.Flatten(name=f"flatten_{feature}")(input_)
@@ -127,7 +125,7 @@ def _build_lag_tensor(conf: ModelConfig):
     # get all static inputs
     embedded_static: Model = _build_static_embeddings(conf)
     static_num_in = layers.Input(
-        shape=(len(conf.numeric_static_raster_features), *raster_size_tuple),
+        shape=(6, *raster_size_tuple),
         name="static_numeric_in",
     )
 
@@ -142,7 +140,7 @@ def _build_lag_tensor(conf: ModelConfig):
 
     # temporal lag features
     temp_feature_lag_in = layers.Input(
-        shape=(conf.lag, len(conf.temporal_raster_features), *raster_size_tuple),
+        shape=(conf.lag, 4, *raster_size_tuple),
         name="temp_feature_lag_in",
     )
     temp_feature_lag_dropout = layers.TimeDistributed(

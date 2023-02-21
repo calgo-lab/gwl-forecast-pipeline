@@ -131,7 +131,7 @@ class DataLoader:
         t0 = time.time()
         logger.debug("start loading static data")
         static_data = []
-        for well_id in well_ids:
+        for well_id in np.unique(well_ids):
             try:
                 well_meta = self.static_df.loc[well_id]
             except KeyError:
