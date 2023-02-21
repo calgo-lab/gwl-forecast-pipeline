@@ -125,11 +125,11 @@ def create_batch_generator(data_container: DataContainer, conf: ModelConfig,
                 self.x_temp_idx.loc[indices, 'static_index']
             ]
             batch_x_cat_static = self._x_static_categorical[
-                    self.x_temp_idx.loc[indices, 'static_index']
+                self.x_temp_idx.loc[indices, 'static_index']
             ]
             batch_x_cat_static = np.split(batch_x_cat_static, batch_x_cat_static.shape[1], axis=1)
 
-            batch_x = [batch_x_cat_static] + [batch_x_num_static, batch_features_lag, batch_gwl_lag, batch_features_lead]
+            batch_x = batch_x_cat_static + [batch_x_num_static, batch_features_lag, batch_gwl_lag, batch_features_lead]
             if self.conf.group_loss:
                 batch_x.append(
                     self.x_temp_idx.loc[indices, 'well_id'].values.reshape(-1, 1)

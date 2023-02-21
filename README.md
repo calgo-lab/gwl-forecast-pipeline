@@ -321,6 +321,14 @@ from gwl_forecast_pipeline import (
 )
 
 predictions = predict(model_conf, test_data)
+predictions['y'] = preprocessor.inverse_transform_gwl(
+   predictions.index.get_level_values('proj_id'), 
+   predictions[['y']].values,
+)
+predictions['y_hat'] = preprocessor.inverse_transform_gwl(
+   predictions.index.get_level_values('proj_id'), 
+   predictions[['y_hat']].values,
+)
 scores = score(predictions)
 ```
 
