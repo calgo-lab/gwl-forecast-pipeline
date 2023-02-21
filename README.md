@@ -28,14 +28,31 @@ a convenient interface for:
 * Run Forecasts
 * Model Evaluation
 
+## Installation
 
-## Requirements
+### Requirements
 
-### Python
+#### RAM
+
+Most of the stages are optimized for low RAM usage via stream processing and file system caches, 
+such as Data Loading, Data Preprocessing and Model Training. RAM-usage is configurable via
+several parameters (documented below). For flawless execution we recommend at minimum 64 GB of RAM. 
+
+#### Disk Space
+
+For raw and processed data about 110 GB of free disk space are needed. When file system caches
+are activated (to save RAM on data preprocessing and training) the disk usage will increase with
+selected number of wells, selected training period and selected raster size.
+
+### OPTION A: Install via `pip`
+
+#### Requirements
+
+##### Python
 
 To install the package a python version of `3.8` (or higher) is required.
  
-### Linux
+##### Linux
 
 While many parts of the pipeline are OS-agnostic, the _Data Preparation Stage_ relies on subprocesses
 that are specific to Linux.
@@ -43,29 +60,23 @@ The Rasterization of geospatial data is done with the help of the [`gdal`-librar
 In order to run the _Data Preparation Stage_ the libraries `gdal-bin` and `libgdal-dev` are
 required to be installed on your system.
 
-### GPU / CUDA
+##### GPU / CUDA
 
 For GPU accelerated model performance, [`CUDA`](https://developer.nvidia.com/cuda-downloads) and [`cuDNN`](https://developer.nvidia.com/cudnn) are required to be installed on your system.
-Using a [docker container](https://hub.docker.com/r/nvidia/cuda/) may be a viable solution.
 
-### RAM
-
-Most of the stages are optimized for low RAM usage via stream processing and file system caches, 
-such as Data Loading, Data Preprocessing and Model Training. RAM-usage is configurable via
-several parameters (documented below). For flawless execution we recommend at minimum 64 GB of RAM. 
-
-### Disk Space
-
-For raw and processed data about 110 GB of free disk space are needed. When file system caches
-are activated (to save RAM on data preprocessing and training) the disk usage will increase with
-selected number of wells, selected training period and selected raster size. 
-
-
-## Installation
-
+##### Installation
 install the package via `pip`
 ```shell
 pip install git+https://github.com/calgo-lab/gwl-forecast-pipeline
+```
+
+### OPTION B: Use docker container
+
+The docker container comes with all dependencies.
+
+```shell
+git clone https://github.com/calgo-lab/gwl-forecast-pipeline .
+docker build -t calgo-lab/gwl-forecast-pipeline .
 ```
 
 ## Configuration / Setup
