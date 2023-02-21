@@ -64,13 +64,9 @@ selected number of wells, selected training period and selected raster size.
 
 ## Installation
 
-1. clone the repository
+install the package via `pip`
 ```shell
-git clone https://github.com/calgo-lab/gwl-forecast-pipeline.git [PROJECT_PATH]
-```
-2. install the package via `pip`
-```shell
-pip install [PROJECT_PATH]
+pip install git+https://github.com/calgo-lab/gwl-forecast-pipeline
 ```
 
 ## Configuration / Setup
@@ -85,6 +81,22 @@ The data sets on groundwater levels and groundwater well meta data are not publi
 ### Settings
 
 1. create a `settings.ini` file declaring the following config variables:
+
+```ini
+[settings]
+EUDEM_ELEVATION_URL=...
+EUDEM_SLOPE_URL=...
+EUDEM_ASPECT_URL=...
+GWL_URL=...
+DROP_GWL_PERIODS_URL=...
+WELL_META_URL=...
+DATA_PATH=...
+MODEL_PATH=...
+PREPROCESSOR_CACHE_PATH=...
+PREDICTION_RESULT_PATH=...
+HYPEROPT_RESULT_PATH=...
+SCORE_RESULT_PATH=...
+```
 
 | VARIABLE                  | SEMANTICS                                                                                    | Required | Default         |
 |---------------------------|----------------------------------------------------------------------------------------------|----------|-----------------|
@@ -162,10 +174,10 @@ gwl_download_data
 In order to access the data from EU-DEM data set, follow these steps:
 
 1. Register on https://land.copernicus.eu
-2. Go to https://land.copernicus.eu/imagery-in-situ/eu-dem/
+2. Go to https://land.copernicus.eu/imagery-in-situ/eu-dem/eu-dem-v1-0-and-derived-products
 3. Choose the following products and select the following map tiles for download (Download Tab):
 
-    #### EU-DEM Elevation (v1.1) tiles:
+    #### EU-DEM Elevation (v1.0) tiles:
    * EU-DEM 45000-35000: `EUD_CP-DEMS_4500035000-AA` 
    * EU-DEM 45000-25000: `EUD_CP-DEMS_4500025000-AA`
     

@@ -15,7 +15,7 @@ from .constants import (
     DEFAULT_PREPROCESSOR_CACHE_FILES,
     TARGET_COL,
 )
-import gwl_forecast_pipeline.config as config
+from . import config as config
 
 
 class Updateable:

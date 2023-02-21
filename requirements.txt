@@ -1,4 +1,5 @@
 binpacking
+dask
 geocube
 geopandas
 joblib

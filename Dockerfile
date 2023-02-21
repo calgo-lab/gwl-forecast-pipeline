@@ -7,4 +7,5 @@ RUN apt-get update -y && apt-get install -y \
     python3-pip \
     gdal-bin \
     libgdal-dev
+RUN python3 -m pip install --upgrade --force-reinstall numpy
 RUN python3 -m pip install git+https://github.com/calgo-lab/gwl-forecast-pipeline

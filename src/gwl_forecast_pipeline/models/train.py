@@ -13,7 +13,7 @@ from ..types import (
     CNNModelConfig,
     DataContainer,
 )
-import gwl_forecast_pipeline.config as config
+from . import config as config
 
 logger = logging.getLogger(__name__)
 

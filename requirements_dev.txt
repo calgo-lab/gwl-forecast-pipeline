@@ -45,6 +45,8 @@ cligj==0.7.2
     # via
     #   fiona
     #   rasterio
+dask==2023.2.0
+    # via gwl-forecast-pipeline (pyproject.toml)
 fiona==1.9.1
     # via geopandas
 flatbuffers==23.1.21

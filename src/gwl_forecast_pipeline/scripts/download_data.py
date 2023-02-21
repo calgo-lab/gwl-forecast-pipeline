@@ -7,8 +7,8 @@ import requests
 from pydantic import ConfigError
 from tqdm import tqdm
 
-import gwl_forecast_pipeline.config as config
-from gwl_forecast_pipeline.constants import *
+from .. import config as config
+from ..constants import *
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ def get_gwl_data(raw_data_path):
 
 def get_gwl_drop_periods(raw_data_path):
     try:
-        _get_data(raw_data_path, slug="DROP_GWL_PERIODS",
+        _get_data(raw_data_path, slug="drop_gwl_periods",
                   name="Groundwater level data to drop")
     except ConfigError as e:
         logger.error(e)
@@ -100,10 +100,10 @@ def get_hyras_data(raw_data_path):
     hyras_path = os.path.join(raw_data_path, 'hyras')
     if not os.path.exists(hyras_path):
         os.mkdir(hyras_path)
-    for slug, name in [
-        ('TAS', 'air_temperature_mean'),
-        ('HURS', 'humidity'),
-        ('PR', 'precipitation')
+    for name, slug in [
+        (FEATURES.HUMIDITY, 'hurs'),
+        (FEATURES.TEMPERATURE, 'tas'),
+        (FEATURES.PRECIPITATION, 'pr'),
     ]:
         try:
             _get_data(hyras_path, slug=f'{DATA_SETS.HYRAS}_{slug}', name=name)
@@ -116,8 +116,8 @@ def get_eudem_data(raw_data_path):
     if not os.path.exists(eudem_path):
         os.mkdir(eudem_path)
     for slug, files in [
-        (FEATURES.ELEVATION, ['eu_dem_v11_E40N20.TIF', 'eu_dem_v11_E40N30.TIF']),
-        (FEATURES.ASPECT, ['EUD_CP-ASPC_4500035000-AA.tif', 'EUD_CP-ASPC_4500025000-AA.tif']),
+        (FEATURES.ELEVATION, ['EUD_CP-DEMS_4500025000-AA.tif', 'EUD_CP-DEMS_4500035000-AA.tif']),
+        (FEATURES.ASPECT, ['EUD_CP-ASPC_4500025000-AA.tif', 'EUD_CP-ASPC_4500035000-AA.tif']),
         (FEATURES.SLOPE, ['EUD_CP-SLOP_4500025000-AA.tif', 'EUD_CP-SLOP_4500035000-AA.tif']),
     ]:
         try:
@@ -208,7 +208,7 @@ def main():
     get_gwl_data(raw_data_path)
     get_gwl_drop_periods(raw_data_path)
     get_well_meta(raw_data_path)
-    get_benchmark_data(external_data_path)
+    # get_benchmark_data(external_data_path)
     get_swr1000(raw_data_path)
     get_huek250(raw_data_path)
     get_gwn1000(raw_data_path)

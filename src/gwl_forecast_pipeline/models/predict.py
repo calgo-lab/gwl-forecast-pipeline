@@ -8,7 +8,7 @@ from .build import load_model
 from .batch_generator import create_batch_generator
 from ..constants import FREQ
 from ..types import (CNNModelConfig, ConvLSTMModelConfig, DataContainer, ModelConfig, )
-import gwl_forecast_pipeline.config as config
+from .. import config as config
 
 
 

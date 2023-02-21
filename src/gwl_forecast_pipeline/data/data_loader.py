@@ -13,7 +13,7 @@ from rasterio.io import MemoryFile
 
 from ..constants import *
 from ..types import MetaData
-import gwl_forecast_pipeline.config as config
+from .. import config as config
 
 
 logger = logging.getLogger(__name__)

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-import gwl_forecast_pipeline.config as config
+from ... import config as config
 from .pipeline import (
     StaticRasterPreprocessingPipeline,
     TemporalRasterPreprocessingPipeline,

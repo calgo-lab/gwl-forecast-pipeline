@@ -43,7 +43,7 @@ class FeatureTransformerMixin(TransformerMixin):
         return array
 
     @classmethod
-    def fill_raster(cls, array, max_iter=3):
+    def fill_raster(cls, array, max_iter=3, shift_fill=False):
         # pad array and iterate rolling mean 2d
         array = np.pad(array, [(0, 0), (1, 1), (1, 1)], mode='edge')
         original_values_mask = ~np.isnan(array)
@@ -65,7 +65,7 @@ class FeatureTransformerMixin(TransformerMixin):
             array[nan_mask] = mean[nan_mask]
 
         # remaining nans cover a complete raster, therefore shift along time axis
-        if np.any(np.isnan(array)):
+        if np.any(np.isnan(array)) and shift_fill:
             array = cls.shift_fill_raster(array, backwards=True)
         return array
 

@@ -9,7 +9,7 @@ from sklearn.preprocessing import OrdinalEncoder
 from ..constants import *
 from ..types import ModelConfig, DataContainer
 from ..features.preprocessing.stack_transformer import StaticHStackTransformer
-import gwl_forecast_pipeline.config as config
+from .. import config as config
 
 
 logger = logging.getLogger(__name__)
