@@ -28,7 +28,7 @@ def get_lag_lead_indices(df, lag, lead):
     for _lag in range(1, lag):
         lag_idx = (_df['temp_idx'] - _lag).values.astype(float)
         lag_idx[((_df['proj_id'] != _df['proj_id'].shift(_lag)) | (
-                    (_df['datum'] - _lag * FREQ) != _df['datum'].shift(
+                    (_df['time'] - _lag * FREQ) != _df['time'].shift(
                 _lag))).values] = np.nan
         _lag_indices_list.append(lag_idx.reshape(-1, 1))
     _lag_indices = np.concatenate(_lag_indices_list[::-1], axis=1)
@@ -36,7 +36,7 @@ def get_lag_lead_indices(df, lag, lead):
     for _lead in range(1, lead+1):
         lead_idx = (_df['temp_idx'] + _lead).values.astype(float)
         lead_idx[((_df['proj_id'] != _df['proj_id'].shift(-_lead)) | (
-                (_df['datum'] + _lead * FREQ) != _df['datum'].shift(
+                (_df['time'] + _lead * FREQ) != _df['time'].shift(
             -_lead))).values] = np.nan
         _lead_indices_list.append(lead_idx.reshape(-1, 1))
     _lead_indices = np.concatenate(_lead_indices_list, axis=1)

@@ -96,7 +96,7 @@ class Preprocessor:
 
     def _preprocess_temp(self, temporal_data_generator, data_container: DataContainer, fit, use_fs_buffer,):
         if use_fs_buffer:
-            pd.DataFrame(columns=['proj_id', 'datum']).to_csv(data_container.temporal_index, index=False)
+            pd.DataFrame(columns=['proj_id', 'time']).to_csv(data_container.temporal_index, index=False)
             data_container.gwl_raster.create()
             data_container.temporal_feature_raster.create()
             data_container.target.create()

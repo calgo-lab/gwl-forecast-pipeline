@@ -53,7 +53,7 @@ def _predict_thread(
     if model_config.group_loss:
         predictions = predictions[:, :-1]
 
-    index_df = data_gen.x_temp_idx[['proj_id', 'datum']].copy()
+    index_df = data_gen.x_temp_idx[['proj_id', 'time']].copy()
     y = data_container.target[
         data_gen.lead_indices[data_gen.x_temp_idx.index]
     ][:, :, 0]
@@ -63,10 +63,10 @@ def _predict_thread(
     y_hat_df = pd.DataFrame(predictions)
     y_hat_df.columns = [list(range(1, model_config.lead+1)), ['y_hat']*model_config.lead]
     result_df = pd.concat([index_df, y_df, y_hat_df], axis=1)
-    result_df.set_index(['proj_id', 'datum'], inplace=True)
+    result_df.set_index(['proj_id', 'time'], inplace=True)
     result_df.columns = pd.MultiIndex.from_tuples(result_df.columns, names=['horizon', 'value'])
     result_df = result_df.stack(0)
     result_df.reset_index(inplace=True)
-    result_df['datum'] = result_df['datum'] + (result_df['horizon'] * FREQ)
-    result_df.set_index(['proj_id', 'datum', 'horizon'], inplace=True)
+    result_df['time'] = result_df['time'] + (result_df['horizon'] * FREQ)
+    result_df.set_index(['proj_id', 'time', 'horizon'], inplace=True)
     result['predictions'] = result_df
