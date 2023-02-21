@@ -2,7 +2,6 @@ import logging
 import os
 import time
 import warnings
-from typing import Union
 
 import binpacking
 import numpy as np
