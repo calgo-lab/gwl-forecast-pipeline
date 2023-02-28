@@ -1,7 +1,7 @@
 import abc
 import hashlib
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from multiprocessing.managers import DictProxy
 from pathlib import Path
 from typing import List, Tuple, Optional, Union
@@ -81,22 +81,22 @@ class CNNModelConfig(ModelConfig):
 
 @dataclass
 class ModelHpSpace:
-    lag = tune.quniform(2, 26, 1)
-    learning_rate = tune.qloguniform(.0001, .005, .0001)
-    n_nodes = tune.qloguniform(32, 128, 8)
-    n_encoder_layers = tune.quniform(1, 3, 1)
-    n_decoder_layers = tune.quniform(2, 3, 1)
-    n_dense_layers = tune.quniform(1, 3, 1)
-    dropout = tune.quniform(0., .5, .1)
-    dropout_embedding = tune.quniform(0., .5, .1)
-    dropout_static_features = tune.quniform(0., .5, .1)
-    dropout_temporal_features = tune.quniform(0., .5, .1)
-    pre_decoder_dropout = tune.quniform(0., .5, .1)
+    lag = field(default_factory=lambda: tune.quniform(2, 26, 1))
+    learning_rate = field(default_factory=lambda: tune.qloguniform(.0001, .005, .0001))
+    n_nodes = field(default_factory=lambda: tune.qloguniform(32, 128, 8))
+    n_encoder_layers = field(default_factory=lambda: tune.quniform(1, 3, 1))
+    n_decoder_layers = field(default_factory=lambda: tune.quniform(2, 3, 1))
+    n_dense_layers = field(default_factory=lambda: tune.quniform(1, 3, 1))
+    dropout = field(default_factory=lambda: tune.quniform(0., .5, .1))
+    dropout_embedding = field(default_factory=lambda: tune.quniform(0., .5, .1))
+    dropout_static_features = field(default_factory=lambda: tune.quniform(0., .5, .1))
+    dropout_temporal_features = field(default_factory=lambda: tune.quniform(0., .5, .1))
+    pre_decoder_dropout = field(default_factory=lambda: tune.quniform(0., .5, .1))
 
 
 @dataclass
 class ConvLSTMModelHpSpace(ModelHpSpace):
-    recurrent_dropout = tune.quniform(0., .5, .1)
+    recurrent_dropout = field(default_factory=lambda: tune.quniform(0., .5, .1))
 
 
 @dataclass
