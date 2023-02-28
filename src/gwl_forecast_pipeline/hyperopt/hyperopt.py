@@ -56,8 +56,8 @@ def hyperopt(training_data: DataContainer, validation_data: DataContainer,
 
 def _objective_fn(hyper_params, training_data: Dict, validation_data: Dict,
                   model_conf: Dict = None):
-    if config_.GPU:
-        wait_for_gpu()
+    # if config_.GPU:
+    #     wait_for_gpu()
     if model_conf['type_'] == 'cnn':
         model_conf = CNNModelConfig(**model_conf)
     elif model_conf['type_'] == 'conv_lstm':
