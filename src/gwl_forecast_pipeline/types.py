@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from ray import tune
+from ray.tune.search.sample import Domain
 
 from .constants import (
     GWL_RASTER_FEATURES,
@@ -81,22 +82,22 @@ class CNNModelConfig(ModelConfig):
 
 @dataclass
 class ModelHpSpace:
-    lag = field(default_factory=lambda: tune.quniform(2, 26, 1))
-    learning_rate = field(default_factory=lambda: tune.qloguniform(.0001, .005, .0001))
-    n_nodes = field(default_factory=lambda: tune.qloguniform(32, 128, 8))
-    n_encoder_layers = field(default_factory=lambda: tune.quniform(1, 3, 1))
-    n_decoder_layers = field(default_factory=lambda: tune.quniform(2, 3, 1))
-    n_dense_layers = field(default_factory=lambda: tune.quniform(1, 3, 1))
-    dropout = field(default_factory=lambda: tune.quniform(0., .5, .1))
-    dropout_embedding = field(default_factory=lambda: tune.quniform(0., .5, .1))
-    dropout_static_features = field(default_factory=lambda: tune.quniform(0., .5, .1))
-    dropout_temporal_features = field(default_factory=lambda: tune.quniform(0., .5, .1))
-    pre_decoder_dropout = field(default_factory=lambda: tune.quniform(0., .5, .1))
+    lag: Domain = field(default_factory=lambda: tune.quniform(2, 26, 1))
+    learning_rate: Domain = field(default_factory=lambda: tune.qloguniform(.0001, .005, .0001))
+    n_nodes: Domain = field(default_factory=lambda: tune.qloguniform(32, 128, 8))
+    n_encoder_layers: Domain = field(default_factory=lambda: tune.quniform(1, 3, 1))
+    n_decoder_layers: Domain = field(default_factory=lambda: tune.quniform(2, 3, 1))
+    n_dense_layers: Domain = field(default_factory=lambda: tune.quniform(1, 3, 1))
+    dropout: Domain = field(default_factory=lambda: tune.quniform(0., .5, .1))
+    dropout_embedding: Domain = field(default_factory=lambda: tune.quniform(0., .5, .1))
+    dropout_static_features: Domain = field(default_factory=lambda: tune.quniform(0., .5, .1))
+    dropout_temporal_features: Domain = field(default_factory=lambda: tune.quniform(0., .5, .1))
+    pre_decoder_dropout: Domain = field(default_factory=lambda: tune.quniform(0., .5, .1))
 
 
 @dataclass
 class ConvLSTMModelHpSpace(ModelHpSpace):
-    recurrent_dropout = field(default_factory=lambda: tune.quniform(0., .5, .1))
+    recurrent_dropout: Domain = field(default_factory=lambda: tune.quniform(0., .5, .1))
 
 
 @dataclass
