@@ -96,7 +96,7 @@ class ModelHpSpace:
 
 @dataclass
 class ConvLSTMModelHpSpace(ModelHpSpace):
-    recurrent_dropout = tune.qloguniform(0., .5, .1)
+    recurrent_dropout = tune.quniform(0., .5, .1)
 
 
 @dataclass
