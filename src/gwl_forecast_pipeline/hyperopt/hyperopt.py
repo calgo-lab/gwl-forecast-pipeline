@@ -7,7 +7,7 @@ from ray.tune.schedulers.hb_bohb import HyperBandForBOHB
 from ray.tune.search.bohb import TuneBOHB
 from ray.tune.utils import wait_for_gpu
 
-from .. import config as config
+from .. import config as config_
 from ..models import fit_model, build_model
 from ..models.batch_generator import create_batch_generator
 from ..types import (ModelConfig, DataContainer, ModelHpSpace, CNNModelConfig,
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def hyperopt(training_data: DataContainer, validation_data: DataContainer,
              model_config: ModelConfig, param_space: ModelHpSpace, max_evals=300):
     run_conf = air.RunConfig(
-        local_dir=config.HYPEROPT_RESULT_PATH,
+        local_dir=config_.HYPEROPT_RESULT_PATH,
     )
     bohb_hyperband = HyperBandForBOHB(
         time_attr="training_iteration",
@@ -36,10 +36,15 @@ def hyperopt(training_data: DataContainer, validation_data: DataContainer,
     )
 
     tuner = tune.Tuner(
-        tune.with_parameters(tune.with_resources(_objective_fn, {'cpu': 2, 'gpu': 1}),
-                             training_data=asdict(training_data),
-                             validation_data=asdict(validation_data),
-                             model_conf=asdict(model_config)),
+        tune.with_parameters(
+            tune.with_resources(
+                _objective_fn,
+                {'cpu': 2, 'gpu': 1 if config_.GPU else 0}
+            ),
+            training_data=asdict(training_data),
+            validation_data=asdict(validation_data),
+            model_conf=asdict(model_config)
+        ),
         tune_config=tune_conf,
         run_config=run_conf,
         param_space=asdict(param_space)
@@ -51,7 +56,8 @@ def hyperopt(training_data: DataContainer, validation_data: DataContainer,
 
 def _objective_fn(hyper_params, training_data: Dict, validation_data: Dict,
                   model_conf: Dict = None):
-    wait_for_gpu()
+    if config_.GPU:
+        wait_for_gpu()
     if model_conf['type_'] == 'cnn':
         model_conf = CNNModelConfig(**model_conf)
     elif model_conf['type_'] == 'conv_lstm':
