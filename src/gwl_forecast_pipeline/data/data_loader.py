@@ -90,10 +90,25 @@ class DataLoader:
                         mf.write(ds.read())
                 self._raster_data[feature_name] = InMemoryRaster(mem_file)
         logger.debug(f'finished prefetching data sources, time elapsed: {(time.time() - t0):.2f}s')
+    #
+    # def load_random_sample(self, start, end, raster_size, sample_size, random_state=None, max_chunk_size=3500):
+    #     num_total_samples, well_ids, temporal_data_generator = self._load_sequential_data(
+    #         None, start, end, raster_size, max_chunk_size=max_chunk_size,
+    #         random_sample=sample_size, random_state=random_state)
+    #     n_wells, static_data_generator = self._load_static_data(well_ids, raster_size)
+    #     meta_data = MetaData(
+    #         well_ids=well_ids,
+    #         start=start,
+    #         end=end,
+    #         raster_size=raster_size,
+    #         n_wells=n_wells,
+    #         n_samples=num_total_samples,
+    #     )
+    #     return meta_data, static_data_generator, temporal_data_generator
 
     def load_data(self, well_ids, start, end, raster_size, max_chunk_size=3500):
         n_wells, static_data_generator = self._load_static_data(well_ids, raster_size)
-        num_total_samples, temporal_data_generator = self._load_sequential_data(
+        num_total_samples, well_ids, temporal_data_generator = self._load_sequential_data(
             well_ids, start, end, raster_size, max_chunk_size
         )
         meta_data = MetaData(
@@ -188,13 +203,17 @@ class DataLoader:
         )
         return chunk.drop(columns=['month']).set_index(['proj_id', 'time'])
 
-    def _load_sequential_data(self, well_ids, start, end, raster_size, max_chunk_size, use_gwl_raster_df=False):
+    def _load_sequential_data(self, well_ids, start, end, raster_size, max_chunk_size):
         seq_df = self.gwl_df.loc[(slice(None), slice(start, end)), :]
+        # if random_sample:
+        #     seq_df = seq_df.sample(random_sample, random_state=random_state).copy()
+        # if well_ids:
         seq_df = seq_df[seq_df.index.get_level_values('proj_id').isin(well_ids)].copy().dropna()
         seq_df.rename(columns={FEATURES.GROUNDWATER_LEVEL: TARGET_COL}, inplace=True)
-        return len(seq_df), self._load_chunk(seq_df, start, end, raster_size, max_chunk_size, use_gwl_raster_df)
+        well_ids = seq_df.index.get_level_values('proj_id').unique().to_list()
+        return len(seq_df), well_ids, self._load_chunk(seq_df, start, end, raster_size, max_chunk_size)
 
-    def _load_chunk(self, seq_df, start, end, raster_size, max_chunk_size, use_gwl_raster_df=False):
+    def _load_chunk(self, seq_df, start, end, raster_size, max_chunk_size):
         samples_per_group = seq_df.groupby(axis=0, level=0).count().iloc[:, 0]
         if max_chunk_size < samples_per_group.max():
             raise ValueError("minimum chunk size has to be big enough to hold all samples of one well,"

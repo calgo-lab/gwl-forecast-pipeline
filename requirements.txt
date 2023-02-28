@@ -1,7 +1,9 @@
 binpacking
+ConfigSpace
 dask
 geocube
 geopandas
+hpbandster
 joblib
 netCDF4
 numpy
@@ -13,6 +15,7 @@ pyproj
 python-decouple
 PyYAML
 rasterio
+ray[tune]
 requests
 rioxarray
 scikit-learn

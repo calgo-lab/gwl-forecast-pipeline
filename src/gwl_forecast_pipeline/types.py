@@ -9,6 +9,7 @@ from typing import List, Tuple, Optional, Union
 import numpy as np
 import pandas as pd
 from pydantic.dataclasses import dataclass as pydantic_dataclass
+from ray import tune
 
 from .constants import (
     GWL_RASTER_FEATURES,
@@ -48,7 +49,7 @@ class ModelConfig(Updateable, abc.ABC):
     dropout_static_features: float = .33
     dropout_temporal_features: float = .25
     pre_decoder_dropout: float = .25
-    early_stop_patience: int = 10
+    early_stop_patience: int = 20
     weighted_feature: str = None
     sample_weights: dict = None
     type_: str = None
@@ -76,6 +77,26 @@ class ConvLSTMModelConfig(ModelConfig):
 class CNNModelConfig(ModelConfig):
     epochs: int = 200
     type_: str = 'cnn'
+
+
+@dataclass
+class ModelHpSpace:
+    lag = tune.quniform(2, 26, 1)
+    learning_rate = tune.qloguniform(.0001, .005, .0001)
+    n_nodes = tune.qloguniform(32, 128, 8)
+    n_encoder_layers = tune.quniform(1, 3, 1)
+    n_decoder_layers = tune.quniform(2, 3, 1)
+    n_dense_layers = tune.quniform(1, 3, 1)
+    dropout = tune.quniform(0., .5, .1)
+    dropout_embedding = tune.quniform(0., .5, .1)
+    dropout_static_features = tune.quniform(0., .5, .1)
+    dropout_temporal_features = tune.quniform(0., .5, .1)
+    pre_decoder_dropout = tune.quniform(0., .5, .1)
+
+
+@dataclass
+class ConvLSTMModelHpSpace(ModelHpSpace):
+    recurrent_dropout = tune.qloguniform(0., .5, .1)
 
 
 @dataclass

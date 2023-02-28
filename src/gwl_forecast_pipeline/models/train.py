@@ -5,15 +5,12 @@ import os
 import shutil
 import time
 
+from ray.tune.integration.keras import TuneReportCallback
+
+from . import config as config
 from .batch_generator import create_batch_generator
 from .build import build_model, load_model
-from ..types import (
-    ModelConfig,
-    ConvLSTMModelConfig,
-    CNNModelConfig,
-    DataContainer,
-)
-from . import config as config
+from ..types import (ModelConfig, ConvLSTMModelConfig, CNNModelConfig, DataContainer, )
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +37,8 @@ def fit_new_model(train_data: DataContainer, model_conf: ModelConfig,
 
 
 def fit_model(model, train_data, model_conf: ModelConfig,
-              val_data: DataContainer = None, tensorboard=None, csv_logger=None):
+              val_data: DataContainer = None, tensorboard=None, csv_logger=None,
+              tune_callback=False):
     import tensorflow as tf
     tf.keras.backend.clear_session()
 
@@ -58,6 +56,8 @@ def fit_model(model, train_data, model_conf: ModelConfig,
             os.path.join(config.MODEL_PATH, f'{model_conf.name}.h5'),
         )
     ]
+    if tune_callback:
+        callbacks.append(TuneReportCallback())
     if tensorboard:
         tb_path = os.path.join(tensorboard, model_conf.name)
         if os.path.exists(tb_path):
