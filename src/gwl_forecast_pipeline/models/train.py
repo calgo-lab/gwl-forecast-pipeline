@@ -5,8 +5,6 @@ import os
 import shutil
 import time
 
-from ray.tune.integration.keras import TuneReportCallback
-
 from . import config as config
 from .batch_generator import create_batch_generator
 from .build import build_model, load_model
@@ -57,6 +55,7 @@ def fit_model(model, train_data, model_conf: ModelConfig,
         )
     ]
     if tune_callback:
+        from ray.tune.integration.keras import TuneReportCallback
         callbacks.append(TuneReportCallback())
     if tensorboard:
         tb_path = os.path.join(tensorboard, model_conf.name)
