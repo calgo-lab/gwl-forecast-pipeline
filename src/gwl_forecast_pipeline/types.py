@@ -27,7 +27,7 @@ class Updateable:
 
 
 @pydantic_dataclass(config=dict(validate_assignment=True))
-class ModelConfig(Updateable, abc.ABC):
+class ModelConfig(Updateable, metaclass=abc.ABCMeta):
     name: str
     lag: int = 4
     lead: int = 1

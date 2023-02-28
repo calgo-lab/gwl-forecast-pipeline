@@ -28,13 +28,13 @@ def hyperopt(training_data: DataContainer, validation_data: DataContainer,
         metric='val_loss',
         mode='min',
     )
+    bohb_search = tune.search.ConcurrencyLimiter(bohb_search, max_concurrent=2)
     tune_conf = tune.TuneConfig(
         metric="val_loss",
         mode="min",
         scheduler=bohb_hyperband,
         search_alg=bohb_search,
         num_samples=max_evals,
-        max_concurrent_trials=2,
     )
 
     tuner = tune.Tuner(
