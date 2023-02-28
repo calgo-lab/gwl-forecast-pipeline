@@ -35,7 +35,7 @@ def hyperopt(training_data: DataContainer, validation_data: DataContainer,
     )
 
     tuner = tune.Tuner(
-        tune.with_parameters(_objective_fn,
+        tune.with_parameters(tune.with_resources(_objective_fn, {'cpu': 2, 'gpu': 0.5}),
                              training_data=asdict(training_data),
                              validation_data=asdict(validation_data),
                              model_conf=asdict(model_config)),
