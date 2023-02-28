@@ -9,7 +9,8 @@ from ray.tune.search.bohb import TuneBOHB
 from .. import config as config
 from ..models import fit_model, build_model
 from ..models.batch_generator import create_batch_generator
-from ..types import (ModelConfig, DataContainer, ModelHpSpace)
+from ..types import (ModelConfig, DataContainer, ModelHpSpace, CNNModelConfig,
+                     ConvLSTMModelConfig)
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,10 @@ def hyperopt(training_data: DataContainer, validation_data: DataContainer,
     )
 
     tuner = tune.Tuner(
-        tune.with_parameters(_objective_fn, training_data=training_data, validation_data=validation_data, model_conf=model_config),
+        tune.with_parameters(_objective_fn,
+                             training_data=asdict(training_data),
+                             validation_data=asdict(validation_data),
+                             model_conf=asdict(model_config)),
         tune_config=tune_conf,
         run_config=run_conf,
         param_space=asdict(param_space)
@@ -49,7 +53,13 @@ def hyperopt(training_data: DataContainer, validation_data: DataContainer,
 
 
 def _objective_fn(hyper_params, training_data: Dict, validation_data: Dict,
-                  model_conf: ModelConfig = None):
+                  model_conf: Dict = None):
+    if model_conf['type_'] == 'cnn':
+        model_conf = CNNModelConfig(**model_conf)
+    elif model_conf['type_'] == 'conv_lstm':
+        model_conf = ConvLSTMModelConfig(**model_conf)
+    else:
+        raise ValueError("unknown model type")
     model_conf.update(hyper_params)
 
     import tensorflow as tf
