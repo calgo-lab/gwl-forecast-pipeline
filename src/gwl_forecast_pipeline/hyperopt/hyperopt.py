@@ -5,6 +5,7 @@ from typing import Dict
 from ray import air, tune
 from ray.tune.schedulers.hb_bohb import HyperBandForBOHB
 from ray.tune.search.bohb import TuneBOHB
+from ray.tune.utils import wait_for_gpu
 
 from .. import config as config
 from ..models import fit_model, build_model
@@ -31,11 +32,11 @@ def hyperopt(training_data: DataContainer, validation_data: DataContainer,
         scheduler=bohb_hyperband,
         search_alg=bohb_search,
         num_samples=max_evals,
-        max_concurrent_trials=2,
+        max_concurrent_trials=1,
     )
 
     tuner = tune.Tuner(
-        tune.with_parameters(tune.with_resources(_objective_fn, {'cpu': 2, 'gpu': 0.5}),
+        tune.with_parameters(tune.with_resources(_objective_fn, {'cpu': 2, 'gpu': 1}),
                              training_data=asdict(training_data),
                              validation_data=asdict(validation_data),
                              model_conf=asdict(model_config)),
@@ -50,6 +51,7 @@ def hyperopt(training_data: DataContainer, validation_data: DataContainer,
 
 def _objective_fn(hyper_params, training_data: Dict, validation_data: Dict,
                   model_conf: Dict = None):
+    wait_for_gpu()
     if model_conf['type_'] == 'cnn':
         model_conf = CNNModelConfig(**model_conf)
     elif model_conf['type_'] == 'conv_lstm':

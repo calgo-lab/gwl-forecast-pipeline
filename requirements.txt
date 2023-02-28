@@ -3,6 +3,7 @@ ConfigSpace
 dask
 geocube
 geopandas
+gputil
 hpbandster
 joblib
 netCDF4
@@ -20,6 +21,6 @@ requests
 rioxarray
 scikit-learn
 StrEnum
-tensorflow
+tensorflow~=2.10
 tqdm
 xarray
