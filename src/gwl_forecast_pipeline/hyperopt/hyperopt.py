@@ -24,8 +24,6 @@ def hyperopt(training_data: DataContainer, validation_data: DataContainer,
     bohb_hyperband = HyperBandForBOHB(
         time_attr="training_iteration",
         max_t=model_config.epochs,
-        metric='val_loss',
-        mode='min',
     )
     bohb_search = TuneBOHB(
         metric="val_loss",
