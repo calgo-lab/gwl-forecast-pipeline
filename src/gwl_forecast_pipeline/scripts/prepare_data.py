@@ -15,6 +15,7 @@ from pyproj import Transformer, CRS
 from rasterio.crs import CRS
 from rasterio.merge import merge
 from rasterio.warp import Resampling
+from rasterio.windows import Window
 
 from ..constants import *
 from ..features.preprocessing.mixins import FeatureTransformerMixin
@@ -121,8 +122,6 @@ def prepare_gwl_data(raw_base_path, target_base_path, raster_reference_path):
                        'nn_messwert': 'gwl_asl'}, inplace=True)
     df['gwl_asl'] = df['gwl_asl'].astype(np.float32)
 
-    df[['proj_id', 'time', 'gwl_asl']].to_feather(os.path.join(path, 'gwl_asl.feather'))
-
     # rasterize
     gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['x'], df['y']))
     gdf.set_crs(epsg=3034, inplace=True)
@@ -193,6 +192,23 @@ def prepare_gwl_data(raw_base_path, target_base_path, raster_reference_path):
                        **meta) as dst:
         for idx, layer in enumerate(interpolated_data_bench, start=1):
             dst.write_band(idx, layer)
+
+    # remove wells close to border
+    border_wells = []
+    with rasterio.open(
+            os.path.join(data_path, 'processed',
+                         PROCESSED_DATA_PATHS[FEATURES.HUMIDITY],
+                         f'{FEATURES.HUMIDITY}.tif')
+    ) as src:
+        for proj_id in df['proj_id'].unique():
+            x, y = well_meta_df.loc[well_meta_df['proj_id'] == proj_id, ['x', 'y']].iloc[0]
+            window = Window(x - MAX_RASTER_SIZE // 2, y - MAX_RASTER_SIZE // 2, MAX_RASTER_SIZE, MAX_RASTER_SIZE)
+            data = src.read(1, window=window)
+            if np.any(np.isnan(data)):
+                border_wells.append(proj_id)
+    df = df[~df['proj_id'].isin(border_wells)].reset_index(drop=True)
+    df[['proj_id', 'time', 'gwl_asl']].to_feather(os.path.join(path, 'gwl_asl.feather'))
+
 
     logger.info(f"...done.")
 

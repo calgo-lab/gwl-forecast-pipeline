@@ -137,7 +137,6 @@ def create_batch_generator(data_container: DataContainer, conf: ModelConfig,
             if self.train:
                 batch_y = self._y[self.lead_indices[indices]].reshape(-1, self.lead)
                 if self.conf.group_loss:
-                    # ToDo: well id is not present
                     batch_y = np.concatenate([
                         batch_y,
                         self.x_temp_idx.loc[indices, 'well_id'].values.reshape(-1, 1)
