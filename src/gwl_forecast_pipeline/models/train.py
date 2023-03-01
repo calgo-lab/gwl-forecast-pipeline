@@ -50,13 +50,10 @@ def fit_model(model, train_data, model_conf: ModelConfig,
             monitor='val_loss', min_delta=0.01, patience=model_conf.early_stop_patience,
             mode='min', restore_best_weights=True,
         ),
-        # tf.keras.callbacks.ModelCheckpoint(
-        #     os.path.join(config.MODEL_PATH, f'{model_conf.name}.h5'),
-        # )
     ]
     if tune_callback:
-        from ray.tune.integration.keras import TuneReportCallback
-        callbacks.append(TuneReportCallback())
+        from ray.tune.integration.keras import TuneReportCheckpointCallback
+        callbacks.append(TuneReportCheckpointCallback(frequency=10))
     if tensorboard:
         tb_path = os.path.join(tensorboard, model_conf.name)
         if os.path.exists(tb_path):

@@ -48,19 +48,19 @@ class Preprocessor:
             self.temporal_preprocessor.fit(temp_data, partial=True)
             self.target_preprocessor.fit(temp_data, partial=True)
 
-    def preprocess(self, raw_data, fit=True, use_fs_buffer=True):
+    def preprocess(self, raw_data, fit=True, use_fs_buffer=True, use_cached=True):
         meta_data, static_data_generator, temporal_data_generator = raw_data
         data_container = DataContainer.from_path(config.PREPROCESSOR_CACHE_PATH,
                                                  meta=meta_data)
         errors = data_container.collect(dry_run=True)
 
-        if set(errors).intersection(set(data_container.static_fields)):
+        if set(errors).intersection(set(data_container.static_fields)) or not use_cached:
             self._preprocess_static(
                 static_data_generator, fit, data_container, use_fs_buffer,
             )
         else:
             logger.debug('use cached preprocessed static data')
-        if set(errors).intersection(set(data_container.temporal_fields)):
+        if set(errors).intersection(set(data_container.temporal_fields)) or not use_cached:
             self._preprocess_temp(
                 temporal_data_generator, data_container, fit, use_fs_buffer,
             )

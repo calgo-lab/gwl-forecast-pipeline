@@ -1,8 +1,10 @@
 import logging
+import os
 from dataclasses import asdict
 from typing import Dict
 
 from ray import air, tune
+from ray.tune import Tuner
 from ray.tune.schedulers.hb_bohb import HyperBandForBOHB
 from ray.tune.search.bohb import TuneBOHB
 from ray.tune.utils import wait_for_gpu
@@ -17,41 +19,50 @@ logger = logging.getLogger(__name__)
 
 
 def hyperopt(training_data: DataContainer, validation_data: DataContainer,
-             model_config: ModelConfig, param_space: ModelHpSpace, max_evals=300):
-    run_conf = air.RunConfig(
-        local_dir=config_.HYPEROPT_RESULT_PATH,
-    )
-    bohb_hyperband = HyperBandForBOHB(
-        time_attr="training_iteration",
-        max_t=model_config.epochs,
-    )
-    bohb_search = TuneBOHB(
-        metric="val_loss",
-        mode="min",
-    )
-    tune_conf = tune.TuneConfig(
-        metric="val_loss",
-        mode="min",
-        scheduler=bohb_hyperband,
-        search_alg=bohb_search,
-        num_samples=max_evals,
-        max_concurrent_trials=1,
-    )
+             model_config: ModelConfig, param_space: ModelHpSpace, max_evals=300, resume=False):
+    tuner = None
+    if resume:
+        try:
+            tuner = Tuner.restore(path=os.path.join(config_.HYPEROPT_RESULT_PATH, model_config.name))
+        except RuntimeError:
+            logger.warning(f"could not find a hyperparameter tuning session for {model_config.name}"
+                           f"in {config_.HYPEROPT_RESULT_PATH}. start a new session instead.")
+    if not tuner:
+        run_conf = air.RunConfig(
+            name=model_config.name,
+            local_dir=config_.HYPEROPT_RESULT_PATH,
+        )
+        bohb_hyperband = HyperBandForBOHB(
+            time_attr="training_iteration",
+            max_t=model_config.epochs,
+        )
+        bohb_search = TuneBOHB(
+            metric="val_loss",
+            mode="min",
+        )
+        tune_conf = tune.TuneConfig(
+            metric="val_loss",
+            mode="min",
+            scheduler=bohb_hyperband,
+            search_alg=bohb_search,
+            num_samples=max_evals,
+            max_concurrent_trials=1,
+        )
 
-    tuner = tune.Tuner(
-        tune.with_parameters(
-            tune.with_resources(
-                _objective_fn,
-                {'cpu': 2, 'gpu': 1 if config_.GPU else 0}
+        tuner = tune.Tuner(
+            tune.with_parameters(
+                tune.with_resources(
+                    _objective_fn,
+                    {'cpu': 0, 'gpu': 1 if config_.GPU else 0}
+                ),
+                training_data=asdict(training_data),
+                validation_data=asdict(validation_data),
+                model_conf=asdict(model_config)
             ),
-            training_data=asdict(training_data),
-            validation_data=asdict(validation_data),
-            model_conf=asdict(model_config)
-        ),
-        tune_config=tune_conf,
-        run_config=run_conf,
-        param_space=asdict(param_space)
-    )
+            tune_config=tune_conf,
+            run_config=run_conf,
+            param_space=asdict(param_space)
+        )
     results = tuner.fit()
     model_config.update(results.get_best_result().config)
     return model_config
