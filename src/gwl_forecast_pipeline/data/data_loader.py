@@ -34,7 +34,10 @@ class InMemoryRaster:
         self.raster = raster
 
     def read(self, window: Window = None):
-        return self.raster[window.toslices()]
+        if self.raster.ndim == 2:
+            return self.raster[window.toslices()]
+        else:
+            return self.raster[(slice(None),) + window.toslices()]
 
 
 class DataLoader:
