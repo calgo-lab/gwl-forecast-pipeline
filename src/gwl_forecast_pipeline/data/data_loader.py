@@ -30,12 +30,11 @@ class FileSystemRaster:
 
 class InMemoryRaster:
 
-    def __init__(self, raster: MemoryFile):
+    def __init__(self, raster: np.ndarray):
         self.raster = raster
 
     def read(self, window: Window = None):
-        with self.raster.open() as ds:
-            return ds.read(window=window)
+        return self.raster[window.toslices()]
 
 
 class DataLoader:
@@ -85,10 +84,8 @@ class DataLoader:
         for feature_name, raster in self._raster_data.items():
             if isinstance(raster, FileSystemRaster):
                 with rasterio.open(raster.raster) as ds:
-                    mem_file = MemoryFile()
-                    with mem_file.open(**ds.meta) as mf:
-                        mf.write(ds.read())
-                self._raster_data[feature_name] = InMemoryRaster(mem_file)
+                    array = ds.read()
+                    self._raster_data[feature_name] = InMemoryRaster(array)
         logger.debug(f'finished prefetching data sources, time elapsed: {(time.time() - t0):.2f}s')
     #
     # def load_random_sample(self, start, end, raster_size, sample_size, random_state=None, max_chunk_size=3500):

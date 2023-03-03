@@ -1,7 +1,9 @@
 import logging
+import multiprocessing
 import os
 import shutil
 import sys
+from multiprocessing import Pool
 from subprocess import Popen
 
 import geopandas as gpd
@@ -143,15 +145,11 @@ def prepare_gwl_data(raw_base_path, target_base_path, raster_reference_path):
             dst.write_band(idx, layer)
     del data_one_hot
 
-    # spatial interpolation
-    interpolated_data = data.copy()
-    # interpolate in chunks to reduce RAM usage
-    start = 0
-    for _ in range(int(np.ceil(interpolated_data.shape[0] / 10))):
-        end = start + 10
-        interpolated_data[start:end] = FeatureTransformerMixin.fill_raster(interpolated_data[start:end],
-                                                                           max_iter=7, shift_fill=False)
-        start = end
+    interpolated_data = list(map(lambda w: w.reshape((1, *w.shape)), list(data.copy())))
+    with Pool(multiprocessing.cpu_count()) as pool:
+        interpolated_data = pool.map(lambda x: FeatureTransformerMixin.fill_raster(x, max_iter=7, shift_fill=False), interpolated_data)
+    interpolated_data = np.stack(interpolated_data)
+    interpolated_data = interpolated_data.reshape((interpolated_data.shape[0], *interpolated_data.shape[-2:]))
 
     with rasterio.open(os.path.join(path, f'{FEATURES.GROUNDWATER_LEVEL}.tif'), 'w',
                        **meta) as dst:
@@ -179,14 +177,14 @@ def prepare_gwl_data(raw_base_path, target_base_path, raster_reference_path):
         for idx, layer in enumerate(data_bench_one_hot, start=1):
             dst.write_band(idx, layer)
 
-    interpolated_data_bench = data_bench.copy()
-    # interpolate in chunks to reduce RAM usage
-    start = 0
-    for _ in range(int(np.ceil(interpolated_data_bench.shape[0] / 10))):
-        end = start + 10
-        interpolated_data_bench[start:end] = FeatureTransformerMixin.fill_raster(
-            interpolated_data_bench[start:end], max_iter=7, shift_fill=False)
-        start = end
+    interpolated_data_bench = list(map(lambda w: w.reshape((1, *w.shape)), list(data_bench.copy())))
+    with Pool(multiprocessing.cpu_count()) as pool:
+        interpolated_data_bench = pool.map(
+            lambda x: FeatureTransformerMixin.fill_raster(x, max_iter=7, shift_fill=False),
+            interpolated_data_bench
+        )
+    interpolated_data_bench = np.stack(interpolated_data_bench)
+    interpolated_data_bench = interpolated_data_bench.reshape((interpolated_data_bench.shape[0], *interpolated_data_bench.shape[-2:]))
 
     with rasterio.open(os.path.join(path, f'{FEATURES.GROUNDWATER_LEVEL}{BENCHMARK_SUFFIX}.tif'), 'w',
                        **meta) as dst:
