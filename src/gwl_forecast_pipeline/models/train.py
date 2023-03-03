@@ -66,7 +66,7 @@ def fit_model(model, train_data, model_conf: ModelConfig,
     t0 = time.time()
     logger.debug('start fitting model')
     history = model.fit(train_data, epochs=model_conf.epochs, validation_data=val_data,
-        verbose=1, callbacks=callbacks)
+        verbose=2, callbacks=callbacks)
     logger.debug(f'finished fitting model; time elapsed: {(time.time() - t0):.1f}s')
     return history
 
